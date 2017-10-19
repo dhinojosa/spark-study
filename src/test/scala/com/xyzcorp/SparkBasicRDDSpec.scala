@@ -145,6 +145,7 @@ class SparkBasicRDDSpec extends FunSuite with Matchers with BeforeAndAfterAll {
     words.count
   }
 
+
   test("Case 9: reduce just operates like standard Scala by bringing all the content in by reduction") {
     val total = sparkContext.parallelize(1 to 5).reduce(_ * _)
     total should be(20)

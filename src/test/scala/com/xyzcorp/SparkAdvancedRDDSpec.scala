@@ -78,11 +78,62 @@ class SparkAdvancedRDDSpec extends FunSuite with Matchers with BeforeAndAfterAll
        doesn't modify the keys indicates whether the input function preserves
        the partitioner, which.""") {
 
-    val data = sparkContext.parallelize(1 to 10000)
-      .mapPartitions(iti => Seq(iti.min, iti.max).toIterator)
-      .collect()
-    println(data)
+    val data: Array[Int] = sparkContext.parallelize(1 to 100)
+      .mapPartitions(it => it.map(_ + 10)).collect
+    println(data.toList)
   }
+
+  test(
+    """Case 5: Map Partition With Index. 	Similar to mapPartitions, but also
+      provides func with an integer value representing the index of the partition,
+      so func must be of type (Int, Iterator<T>) => Iterator<U> when running on an RDD
+      of type T.""") {
+
+    val data = sparkContext.parallelize(1 to 100)
+      .mapPartitionsWithIndex(
+        (idx, it) => it.map(n => s"Received $n on partition index: $idx"))
+      .collect()
+    data.foreach(println)
+  }
+
+  test(
+    """Case 6: Sample a fraction fraction of the data,
+      with replacement, using a given random
+      number generator seed. In this case we will be running with 10%""") {
+
+    val data = sparkContext.parallelize(1 to 100)
+                           .sample(withReplacement = true, fraction = 0.5)
+    data.foreach(println)
+  }
+
+
+  test("""Case 7: Sample a fraction fraction of the data,
+      without replacement, using a given random
+      number generator seed. In this case we will be running with 10%""") {
+
+    val data = sparkContext.parallelize(1 to 100)
+      .sample(withReplacement = false, fraction = 0.5)
+    data.foreach(println)
+  }
+
+  test(
+    """Case 8: Union combines two RDDs of the same type, any identical elements will
+         appear twice, use `distinct` to remove the data`""") {
+     val data1 = sparkContext.parallelize(1 to 100)
+     val data2 = sparkContext.parallelize(101 to 200)
+     data1.union(data2).map(x => x * 20).foreach(println)
+  }
+
+  test("""Case 9: Intersection combines two RDDs and only contains the elements
+      | shared by the same RDD""".stripMargin) {
+    val data1 = sparkContext.parallelize(1 to 50)
+    val data2 = sparkContext.parallelize(25 to 75)
+    data1.intersection(data2).sortBy(identity).foreach(println)
+  }
+
+
+
+
 
   test("Case X: Using Kyro for Serialization") {
 
