@@ -125,3 +125,7 @@ local.properties
 .cache-main
 .scala_dependencies
 .worksheet
+project/build.properties
+metastore_db/
+.idea
+*.log
