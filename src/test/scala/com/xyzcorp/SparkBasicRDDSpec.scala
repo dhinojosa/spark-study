@@ -158,6 +158,13 @@ class SparkBasicRDDSpec extends FunSuite with Matchers with BeforeAndAfterAll {
     rdd.map(row => row.getInt(0)).foreach(x => println(x))
   }
 
+  test("Case 10: Convert from DataFrames or DataSet to RDD") {
+    val dataSetLong = sparkSession.range(1, 100).map(x => x + 1)
+    val dataFrames: DataFrame = dataSetLong.toDF("numbers")
+    val rdd: RDD[Row] = dataFrames.rdd
+    rdd.map(row => row.getInt(0)).foreach(x => println(x))
+  }
+
   override protected def beforeAll(): Unit = {
     super.beforeAll()
   }

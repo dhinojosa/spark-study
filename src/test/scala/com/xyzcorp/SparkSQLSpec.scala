@@ -1,6 +1,9 @@
 package com.xyzcorp
 
+import java.net.URL
+
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
 
@@ -8,33 +11,47 @@ import scala.io.StdIn
 
 class SparkSQLSpec extends FunSuite with Matchers with BeforeAndAfterAll {
 
-  private var sparkContext:SparkContext = _
+  private lazy val sparkConf = new SparkConf().setAppName("spark_basic_rdd").setMaster("local[*]")
+  private lazy val sparkContext: SparkContext = new SparkContext(sparkConf)
+  private lazy val sparkSession = SparkSession.builder().config(sparkConf).getOrCreate()
+  lazy val url: URL = getClass.getResource("/goog.csv")
 
-  test("Case 1: Read from from a file and read the information from the and count all the lengths") {
-    val fileLocation = getClass.getResource("/goog.json").getPath
-    val lines: RDD[String] = sparkContext.textFile(fileLocation, 3)
-    val lineLengths: RDD[Int] = lines.map(s => s.length)
-    val totalLength: Int = lineLengths.reduce((a, b) => a + b)
-    totalLength should be (25560)
+
+  test("Case 1: Read from from a file and create a temporary view with the data") {
+    val frame: DataFrame = sparkSession.read
+      .option("header", "true")
+      .option("inferSchema", "true")
+      .csv(url.getFile)
+
+    frame.createOrReplaceTempView("google_data")
+
+    val frame1 = sparkSession.sql("SELECT Date, Open, Close from google_data")
+    frame1.show()
+    frame1.explain(true)
   }
 
-  test("Case 2: Parallelize will produce a stream of information across 4 partitions") {
-    val paralleled: RDD[Int] = sparkContext.parallelize(1 to 10, 4)
-    val result = paralleled.map(x => x + 40).collect()
-    result should be (Array.apply(41, 42, 43, 44, 45, 46, 47, 48, 49, 50))
+  test("Case 2: Read from from a file and sort the data") {
+    val frame: DataFrame = sparkSession.read
+      .option("header", "true")
+      .option("inferSchema", "true")
+      .csv(url.getFile)
+
+    frame.createOrReplaceTempView("google_data")
+
+    val frame1 = sparkSession.sql("SELECT * from google_data SORT BY Date DESC")
+    frame1.show()
+    frame1.explain(true)
   }
 
   override protected def beforeAll(): Unit = {
-    println("Setting up the spark context")
-    val conf = new SparkConf().setAppName("streaming_1").setMaster("local[*]")
-    sparkContext = new SparkContext(conf)
     super.beforeAll()
   }
-
 
   override protected def afterAll(): Unit = {
     println("Press any key to terminate")
     StdIn.readLine()
+    sparkSession.stop()
+    sparkContext.stop()
     super.afterAll()
   }
 }

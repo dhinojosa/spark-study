@@ -1,42 +1,33 @@
 package com.xyzcorp
 
 
-import java.nio.file.{Files, Paths}
-import java.time.format.DateTimeFormatter
+import java.nio.file.Paths
 import java.time._
-import java.util
+import java.time.format.DateTimeFormatter
 
 import org.apache.spark.broadcast.Broadcast
-import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.{Partitioner, SparkConf, SparkContext}
 import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
 
 import scala.io.StdIn
 
+class StandardPartitioner extends Partitioner {
+  override def numPartitions: Int = 2
+
+  override def getPartition(key: Any): Int = {
+    val s = key.asInstanceOf[String]
+    if (s == "even") 0 else 1;
+  }
+}
+
 class SparkAdvancedRDDSpec extends FunSuite with Matchers with BeforeAndAfterAll {
   private lazy val sparkConf = new SparkConf().setAppName("spark_advanced_rdd").setMaster("local[*]")
   private lazy val sparkContext: SparkContext = new SparkContext(sparkConf)
-  private lazy val sparkSession = SparkSession.builder().config(sparkConf).getOrCreate()
-
-  import sparkSession.implicits._ //required for conversions
+  private lazy val sparkSession = SparkSession.builder().config(sparkConf).getOrCreate() //required for conversions
 
   test(
-    """Case 1: Pipe method allows you to return an RDD created by piping elements
-        to a forked external process. The resulting RDD is computed by executing the
-        given process once per partition. All elements of each input partition are
-        written to a process’s stdin as lines of input separated by a newline.
-        The resulting partition consists of the process’s stdout output, with each line
-        of stdout resulting in one element of the output partition. A process is invoked
-        even for empty partitions.""") {
-
-    val userHome = System.getProperty("user.home")
-
-    //val value1: RDD[String] = sparkContext.parallelize(1 to 10).pipe(seq)
-  }
-
-  test(
-    """Case 2: Broadcast Variables allow the programmer to keep a read-only variable cached
+    """Case 1: Broadcast Variables allow the programmer to keep a read-only variable cached
         on each machine rather than shipping a copy of it with tasks, distributed in an
         efficient manner. Distribution is done efficiently to reduce overhead""") {
     val broadcast: Broadcast[Seq[ZoneId]] =
@@ -52,7 +43,7 @@ class SparkAdvancedRDDSpec extends FunSuite with Matchers with BeforeAndAfterAll
 
 
   test(
-    """Case 3: Accumulator Variables allow the programmer to keep a read-only variable cached
+    """Case 2: Accumulator Variables allow the programmer to keep a read-only variable cached
         on each machine rather than shipping a copy of it with tasks, distributed in an
         efficient manner. Distribution is done efficiently to reduce overhead""") {
 
@@ -71,7 +62,7 @@ class SparkAdvancedRDDSpec extends FunSuite with Matchers with BeforeAndAfterAll
   }
 
   test(
-    """Case 4: Map Partitions. 	Similar to map, but runs separately on each
+    """Case 3: Map Partitions. 	Similar to map, but runs separately on each
        partition (block) of the RDD, so func must be of type Iterator<T> => Iterator<U>
        when running on an RDD of type T. preservesPartitioning`, the second parameter,
        should be `false` unless this is a pair RDD and the input function
@@ -84,7 +75,7 @@ class SparkAdvancedRDDSpec extends FunSuite with Matchers with BeforeAndAfterAll
   }
 
   test(
-    """Case 5: Map Partition With Index. 	Similar to mapPartitions, but also
+    """Case 4: Map Partition With Index. 	Similar to mapPartitions, but also
       provides func with an integer value representing the index of the partition,
       so func must be of type (Int, Iterator<T>) => Iterator<U> when running on an RDD
       of type T.""") {
@@ -97,7 +88,7 @@ class SparkAdvancedRDDSpec extends FunSuite with Matchers with BeforeAndAfterAll
   }
 
   test(
-    """Case 6: Sample a fraction fraction of the data,
+    """Case 5: Sample a fraction fraction of the data,
       with replacement, using a given random
       number generator seed. In this case we will be running with 10%""") {
 
@@ -107,7 +98,7 @@ class SparkAdvancedRDDSpec extends FunSuite with Matchers with BeforeAndAfterAll
   }
 
 
-  test("""Case 7: Sample a fraction fraction of the data,
+  test("""Case 6: Sample a fraction fraction of the data,
       without replacement, using a given random
       number generator seed. In this case we will be running with 10%""") {
 
@@ -117,40 +108,73 @@ class SparkAdvancedRDDSpec extends FunSuite with Matchers with BeforeAndAfterAll
   }
 
   test(
-    """Case 8: Union combines two RDDs of the same type, any identical elements will
+    """Case 7: Union combines two RDDs of the same type, any identical elements will
          appear twice, use `distinct` to remove the data`""") {
      val data1 = sparkContext.parallelize(1 to 100)
      val data2 = sparkContext.parallelize(101 to 200)
      data1.union(data2).map(x => x * 20).foreach(println)
   }
 
-  test("""Case 9: Intersection combines two RDDs and only contains the elements
+  test("""Case 8: Intersection combines two RDDs and only contains the elements
       | shared by the same RDD""".stripMargin) {
     val data1 = sparkContext.parallelize(1 to 50)
     val data2 = sparkContext.parallelize(25 to 75)
     data1.intersection(data2).sortBy(identity).foreach(println)
   }
 
+  test("""Case 9: Subtract""") {
+    val data1 = sparkContext.parallelize(1 to 50)
+    val data2 = sparkContext.parallelize(10 to 20)
+    data1.subtract(data2).foreach(println)
+  }
 
+  test("""Case 10: A x B ={(a,b) | a ∈ A and b ∈ B}, but can cause memory pollution""") {
+    val cartesian = sparkContext.parallelize(1 to 10)
+                    .cartesian(sparkContext.parallelize('a' to 'z'))
+    cartesian.foreach(println)
+  }
 
+  test(
+    """Case 11: For each partition, will simply iterate over all the partitions of the data except the
+      |function that we pass into foreachPartition is not expected
+      |to have a return value.  This makes it great for doing something with each partition like writing it out to
+      | a database. In fact, this is how many data source connectors are written""") {
 
-
-  test("Case X: Using Kyro for Serialization") {
-
+    sparkContext.parallelize(1 to 1000).foreachPartition { iter =>
+      import java.io._
+      import scala.util.Random
+      val randomFileName = new Random().nextInt()
+      val pw = new PrintWriter(new File(s"/tmp/random-file-${randomFileName}.txt"))
+      while (iter.hasNext) {
+        pw.write(iter.next())
+      }
+      pw.close()
+    }
   }
 
 
-  test("Case Y: Using Avro for Serialization") {
-
+  test("""Case 12: Glom takes parallelized data and brings back data from each partition""") {
+    sparkContext.parallelize(1 to 100, 5).map(x => x + 10).collect()
   }
 
+
+  test("""Case 13: keyBy is a utility method that tuples rdd""") {
+    val tuples = sparkContext.parallelize(1 to 100, 5).keyBy(i => i % 2 == 0).collect()
+    println(tuples.toList)
+  }
+
+  test("""Case 14: partitionBy allows us to create our own Partitioner""") {
+    val tuples = sparkContext.parallelize(1 to 100).keyBy(i => if (i % 2 == 0) "even" else "odd")
+      .partitionBy(new StandardPartitioner).collect()
+    println(tuples.toList)
+  }
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
   }
 
   override protected def afterAll(): Unit = {
-    println("Press any key to terminate")
+    println("Press any enter to terminate")
     StdIn.readLine()
     sparkSession.stop()
     sparkContext.stop()
