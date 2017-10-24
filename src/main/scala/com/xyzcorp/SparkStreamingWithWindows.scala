@@ -1,9 +1,9 @@
 package com.xyzcorp
 
 import org.apache.spark.SparkConf
-import org.apache.spark.streaming.{Seconds, StreamingContext}
+import org.apache.spark.streaming.{Minutes, Seconds, StreamingContext}
 
-object SparkStreaming extends App {
+object SparkStreamingWithWindows extends App {
 
   //run with nc -lk 9090
 
@@ -12,12 +12,11 @@ object SparkStreaming extends App {
 
   streamingContext.sparkContext.setLogLevel("INFO")
 
-  val lines = streamingContext.socketTextStream("127.0.0.1", 10150)
-  val words = lines.flatMap(_.split(" "))
-  val pairs = words.map(word => (word, 1))
-  val wordCounts = pairs.reduceByKey(_ + _)
+  val lines = streamingContext.socketTextStream("localhost", 10150)
 
-  wordCounts.print()
+  //produce information over the last 30 seconds of data, every 10 seconds
+  val windowedStream = lines.window(Seconds(30), Seconds(10))
+  windowedStream.print()
 
   streamingContext.start()
   streamingContext.awaitTermination()

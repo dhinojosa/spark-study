@@ -16,7 +16,8 @@ class SparkBasicRDDSpec extends FunSuite with Matchers with BeforeAndAfterAll {
   sparkContext.setLogLevel("ERROR")
   import sparkSession.implicits._ //required for conversions
 
-  test("Case 1: Read from from a file and read the information from the and count all the lengths") {
+  test("Case 1: Read from from a file and read the information from the " +
+       "and count all the lengths") {
     val fileLocation = getClass.getResource("/goog.json").getPath
     val lines: RDD[String] = sparkContext.textFile(fileLocation, 3)
     val lineLengths: RDD[Int] = lines.map(s => s.length)
@@ -156,14 +157,14 @@ class SparkBasicRDDSpec extends FunSuite with Matchers with BeforeAndAfterAll {
 
   test("Case 9: reduce just operates like standard Scala by bringing all the content in by reduction") {
     val total = sparkContext.parallelize(1 to 5).reduce(_ * _)
-    total should be(20)
+    total should be(120)
   }
 
   test("Case 10: Convert from DataFrames or DataSet to RDD") {
     val dataSetLong = sparkSession.range(1, 100).map(x => x + 1)
     val dataFrames: DataFrame = dataSetLong.toDF("numbers")
     val rdd: RDD[Row] = dataFrames.rdd
-    rdd.map(row => row.getInt(0)).foreach(x => println(x))
+    rdd.map(row => row.getLong(0)).foreach(x => println(x))
   }
 
   override protected def beforeAll(): Unit = {
