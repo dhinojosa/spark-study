@@ -11,9 +11,12 @@ import scala.io.StdIn
 
 class SparkSQLSpec extends FunSuite with Matchers with BeforeAndAfterAll {
 
-  private lazy val sparkConf = new SparkConf().setAppName("spark_basic_rdd").setMaster("local[*]")
-  private lazy val sparkContext: SparkContext = new SparkContext(sparkConf)
+  private lazy val sparkConf = new SparkConf().setAppName("spark_sql").setMaster("local[*]")
   private lazy val sparkSession = SparkSession.builder().config(sparkConf).getOrCreate()
+  private lazy val sparkContext = sparkSession.sparkContext
+
+  sparkContext.setLogLevel("INFO")
+
   lazy val url: URL = getClass.getResource("/goog.csv")
 
 

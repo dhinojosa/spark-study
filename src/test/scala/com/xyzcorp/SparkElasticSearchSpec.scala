@@ -18,9 +18,11 @@ class SparkElasticSearchSpec extends FunSuite with Matchers with BeforeAndAfterA
     .set("es.http.timeout", "5000")
     .set("es.net.http.auth.pass", "")
 
-  private lazy val sparkContext: SparkContext = new SparkContext(sparkConf)
-  private lazy val sparkSession = SparkSession.builder().config(sparkConf).getOrCreate()
 
+  private lazy val sparkSession = SparkSession.builder().config(sparkConf).getOrCreate()
+  private lazy val sparkContext = sparkSession.sparkContext
+
+  sparkContext.setLogLevel("ERROR")
 
   test("Case 1: Saving to elastic search using Map, " +
        "Elastic Search requires that elasticsearch-hadoop be downloaded") {
@@ -34,7 +36,6 @@ class SparkElasticSearchSpec extends FunSuite with Matchers with BeforeAndAfterA
 
     println("Saved!")
   }
-
 
   test("Case 2: Searching with Elastic Search") {
     import org.elasticsearch.spark._

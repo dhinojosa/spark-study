@@ -1,7 +1,6 @@
 package com.xyzcorp
 
-import com.typesafe.scalalogging.Logger
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.{DataFrame, Dataset, SparkSession}
 import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
 
@@ -9,10 +8,11 @@ import scala.io.StdIn
 
 class SparkDataFramesSpec extends FunSuite with Matchers with BeforeAndAfterAll {
 
-  private lazy val sparkConf = new SparkConf().setAppName("spark_basic_rdd").setMaster("local[*]")
-  private lazy val sparkContext: SparkContext = new SparkContext(sparkConf)
+  private lazy val sparkConf = new SparkConf().setAppName("spark_dataframes").setMaster("local[*]")
   private lazy val sparkSession = SparkSession.builder().config(sparkConf).getOrCreate()
+  private lazy val sparkContext = sparkSession.sparkContext
 
+  sparkContext.setLogLevel("ERROR")
   import sparkSession.implicits._ //required for conversions
 
   test("Case 1: Show will show a minimal amount of data from the spark data set") {
@@ -27,13 +27,19 @@ class SparkDataFramesSpec extends FunSuite with Matchers with BeforeAndAfterAll 
       .option("header", "true")
       .option("inferSchema", "true")
       .csv(url.getFile)
-    val rows = frame.take(5).foreach(row => println(row))
+    frame.take(5).foreach(row => println(row))
   }
 
   test("Case 3: To DataFrame can take an RDD and convert to a DataFrame") {
     val rdd = sparkContext.parallelize(1 to 100)
     val dataFrame = rdd.toDF("amounts")
-    dataFrame.show(10)
+    val value1: Dataset[Int] = dataFrame.map(row => row.getInt(0))
+  }
+
+  test("Case 4: Show will show a minimal amount of data from the spark data set") {
+    val url = getClass.getResource("/goog.json")
+    val frame: DataFrame = sparkSession.read.csv(url.getFile)
+    frame.filter($"_corrupt_record").show()
   }
 
   override protected def beforeAll(): Unit = {

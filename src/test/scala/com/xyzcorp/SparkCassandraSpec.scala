@@ -1,7 +1,6 @@
 package com.xyzcorp
 
 import com.datastax.spark.connector._
-import com.typesafe.scalalogging.Logger
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
@@ -15,12 +14,10 @@ class SparkCassandraSpec extends FunSuite with Matchers with BeforeAndAfterAll {
     .set("spark.cassandra.auth.password", "")
     .setMaster("local[*]")
 
-  private lazy val sparkContext: SparkContext = new SparkContext(sparkConf)
   private lazy val sparkSession = SparkSession.builder().config(sparkConf).getOrCreate()
+  private lazy val sparkContext = sparkSession.sparkContext
 
-  import sparkSession.implicits._ //required for conversions
-
-  val logger: Logger = Logger[SparkCassandraSpec]
+  sparkContext.setLogLevel("ERROR")
 
   test("Case 1: Connecting to a Cassandra host using SparkConf") {
     val rdd = sparkContext.cassandraTable("music", "artist")

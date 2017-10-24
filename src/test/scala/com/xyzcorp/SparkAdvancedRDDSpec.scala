@@ -22,9 +22,11 @@ class StandardPartitioner extends Partitioner {
 }
 
 class SparkAdvancedRDDSpec extends FunSuite with Matchers with BeforeAndAfterAll {
-  private lazy val sparkConf = new SparkConf().setAppName("spark_advanced_rdd").setMaster("local[*]")
-  private lazy val sparkContext: SparkContext = new SparkContext(sparkConf)
-  private lazy val sparkSession = SparkSession.builder().config(sparkConf).getOrCreate() //required for conversions
+  private lazy val sparkConf = new SparkConf().setAppName("spark_basic_rdd").setMaster("local[*]")
+  private lazy val sparkSession = SparkSession.builder().config(sparkConf).getOrCreate()
+  private lazy val sparkContext = sparkSession.sparkContext
+
+  sparkContext.setLogLevel("ERROR")
 
   test(
     """Case 1: Broadcast Variables allow the programmer to keep a read-only variable cached

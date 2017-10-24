@@ -8,6 +8,7 @@ object SparkStreaming extends App {
 
   val conf = new SparkConf().setAppName("streaming_1").setMaster("local[*]")
   val ssc = new StreamingContext(conf, Seconds(1)) //Seconds comes from streaming
+  ssc.sparkContext.setLogLevel("INFO")
 
   val stream = ssc.socketTextStream("localhost", 9090)
   stream.map(s => "Gather String from the web" + s)

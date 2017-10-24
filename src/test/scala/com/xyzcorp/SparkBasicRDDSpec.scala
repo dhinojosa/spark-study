@@ -10,9 +10,10 @@ import scala.io.StdIn
 
 class SparkBasicRDDSpec extends FunSuite with Matchers with BeforeAndAfterAll {
   private lazy val sparkConf = new SparkConf().setAppName("spark_basic_rdd").setMaster("local[*]")
-  private lazy val sparkContext: SparkContext = new SparkContext(sparkConf)
   private lazy val sparkSession = SparkSession.builder().config(sparkConf).getOrCreate()
+  private lazy val sparkContext = sparkSession.sparkContext
 
+  sparkContext.setLogLevel("ERROR")
   import sparkSession.implicits._ //required for conversions
 
   test("Case 1: Read from from a file and read the information from the and count all the lengths") {
@@ -20,7 +21,7 @@ class SparkBasicRDDSpec extends FunSuite with Matchers with BeforeAndAfterAll {
     val lines: RDD[String] = sparkContext.textFile(fileLocation, 3)
     val lineLengths: RDD[Int] = lines.map(s => s.length)
     val totalLength: Int = lineLengths.reduce((a, b) => a + b)
-    totalLength should be(25560)
+    totalLength should be(25566)
   }
 
   test("Case 2: Parallelize will produce a stream of information across 4 partitions") {
@@ -37,7 +38,14 @@ class SparkBasicRDDSpec extends FunSuite with Matchers with BeforeAndAfterAll {
       .filter(!_.isEmpty)
       .flatMap(s => s.split("""\W+"""))
       .map(s => s.map(_.toLower))
-    words.distinct(4).foreach(x => println(">>>" + x))
+
+    val words2 = for (w <- lines;
+                      x <- w.split("""\n""");
+                      y <- x.split("""\W+""") if !x.isEmpty;
+                      z <- y.map(_.toLower)) yield z
+
+
+     //words.distinct(4).foreach(x => println(">>>" + x))
   }
 
   test("Case 4: Sort by will sort the information based on Ordering[T]") {
@@ -149,13 +157,6 @@ class SparkBasicRDDSpec extends FunSuite with Matchers with BeforeAndAfterAll {
   test("Case 9: reduce just operates like standard Scala by bringing all the content in by reduction") {
     val total = sparkContext.parallelize(1 to 5).reduce(_ * _)
     total should be(20)
-  }
-
-  test("Case 10: Convert from DataFrames or DataSet to RDD") {
-    val dataSetLong = sparkSession.range(1, 100).map(x => x + 1)
-    val dataFrames: DataFrame = dataSetLong.toDF("numbers")
-    val rdd: RDD[Row] = dataFrames.rdd
-    rdd.map(row => row.getInt(0)).foreach(x => println(x))
   }
 
   test("Case 10: Convert from DataFrames or DataSet to RDD") {

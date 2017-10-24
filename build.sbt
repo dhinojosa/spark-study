@@ -7,23 +7,21 @@ scalaVersion := "2.11.11"
 
 resolvers += "Conjars" at "http://conjars.org/repo"
 
-libraryDependencies ++= Seq(
+val sparkVersion = "2.2.0" //Danno
 
-  //Logging
-  "ch.qos.logback" % "logback-classic" % "1.2.3",
-  "com.typesafe.scala-logging" %% "scala-logging" % "3.7.2",
+libraryDependencies ++= Seq(
 
   //Testing
   "org.scalatest" %% "scalatest" % "3.0.4" % "test",
 
   //Spark Core
-  "org.apache.spark" %% "spark-core" % "2.2.0",
+  "org.apache.spark" %% "spark-core" % sparkVersion,
 
   //Spark SQL
-  "org.apache.spark" %% "spark-sql" % "2.2.0",
+  "org.apache.spark" %% "spark-sql" % sparkVersion,
 
   //Spark Streaming
-  "org.apache.spark" %% "spark-streaming" % "2.2.0",
+  "org.apache.spark" %% "spark-streaming" % sparkVersion,
 
   //Hadoop AWS
   "org.apache.hadoop" % "hadoop-aws" % "2.8.1",
@@ -42,6 +40,6 @@ libraryDependencies ++= Seq(
   "commons-httpclient" % "commons-httpclient" % "3.1",
 
   //Kafka
-  "org.apache.spark" %% "spark-streaming-kafka-0-10" % "2.2.0"
+  "org.apache.spark" %% "spark-streaming-kafka-0-10" % sparkVersion
 )
 
