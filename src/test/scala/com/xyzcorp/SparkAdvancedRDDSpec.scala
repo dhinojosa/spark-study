@@ -7,7 +7,7 @@ import java.time.format.DateTimeFormatter
 
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.{Partitioner, SparkConf, SparkContext}
+import org.apache.spark.{Partitioner, SparkConf}
 import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
 
 import scala.io.StdIn
@@ -26,7 +26,7 @@ class SparkAdvancedRDDSpec extends FunSuite with Matchers with BeforeAndAfterAll
   private lazy val sparkSession = SparkSession.builder().config(sparkConf).getOrCreate()
   private lazy val sparkContext = sparkSession.sparkContext
 
-  sparkContext.setLogLevel("ERROR")
+  sparkContext.setLogLevel("INFO")
 
   test(
     """Case 1: Broadcast Variables allow the programmer to keep a read-only variable cached
@@ -144,6 +144,7 @@ class SparkAdvancedRDDSpec extends FunSuite with Matchers with BeforeAndAfterAll
 
     sparkContext.parallelize(1 to 1000).foreachPartition { iter =>
       import java.io._
+
       import scala.util.Random
       val randomFileName = new Random().nextInt()
       val pw = new PrintWriter(new File(s"/tmp/random-file-${randomFileName}.txt"))

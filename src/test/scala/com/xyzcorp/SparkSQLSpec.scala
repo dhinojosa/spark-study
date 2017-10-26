@@ -19,7 +19,6 @@ class SparkSQLSpec extends FunSuite with Matchers with BeforeAndAfterAll {
 
   lazy val url: URL = getClass.getResource("/goog.csv")
 
-
   test("Case 1: Read from from a file and create a temporary view with the data") {
     val frame: DataFrame = sparkSession.read
       .option("header", "true")

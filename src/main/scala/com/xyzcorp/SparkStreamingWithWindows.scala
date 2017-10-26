@@ -1,10 +1,11 @@
 package com.xyzcorp
 
 import org.apache.spark.SparkConf
-import org.apache.spark.streaming.{Minutes, Seconds, StreamingContext}
+import org.apache.spark.streaming.{Seconds, StreamingContext}
 
 object SparkStreamingWithWindows extends App {
 
+  //
   //run with nc -lk 9090
 
   val conf: SparkConf = new SparkConf().setAppName("streaming_1").setMaster("local[*]")

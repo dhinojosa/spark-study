@@ -1,19 +1,21 @@
 package com.xyzcorp
 
+import org.apache.spark.SparkConf
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.apache.spark.storage.StorageLevel
-import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
 
 import scala.io.StdIn
 
 class SparkBasicRDDSpec extends FunSuite with Matchers with BeforeAndAfterAll {
-  private lazy val sparkConf = new SparkConf().setAppName("spark_basic_rdd").setMaster("local[*]")
+
+  private lazy val sparkConf = new SparkConf()
+    .setAppName("spark_basic_rdd").setMaster("local[*]")
   private lazy val sparkSession = SparkSession.builder().config(sparkConf).getOrCreate()
   private lazy val sparkContext = sparkSession.sparkContext
 
-  sparkContext.setLogLevel("ERROR")
+  sparkContext.setLogLevel("INFO")
   import sparkSession.implicits._ //required for conversions
 
   test("Case 1: Read from from a file and read the information from the " +
@@ -28,7 +30,7 @@ class SparkBasicRDDSpec extends FunSuite with Matchers with BeforeAndAfterAll {
   test("Case 2: Parallelize will produce a stream of information across 4 partitions") {
     val paralleled: RDD[Int] = sparkContext.parallelize(1 to 10, 4)
     val result = paralleled.map(x => x + 40).collect()
-    result should be(Array.apply(41, 42, 43, 44, 45, 46, 47, 48, 49, 50))
+    result should be(Array(41, 42, 43, 44, 45, 46, 47, 48, 49, 50))
   }
 
   test("Case 3: Distinct will retrieve all the content and show distinct items") {
@@ -45,8 +47,7 @@ class SparkBasicRDDSpec extends FunSuite with Matchers with BeforeAndAfterAll {
                       y <- x.split("""\W+""") if !x.isEmpty;
                       z <- y.map(_.toLower)) yield z
 
-
-     //words.distinct(4).foreach(x => println(">>>" + x))
+    words.distinct(4).foreach(x => println(">>>" + x))
   }
 
   test("Case 4: Sort by will sort the information based on Ordering[T]") {

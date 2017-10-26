@@ -12,7 +12,7 @@ class SparkDataFramesSpec extends FunSuite with Matchers with BeforeAndAfterAll 
   private lazy val sparkSession = SparkSession.builder().config(sparkConf).getOrCreate()
   private lazy val sparkContext = sparkSession.sparkContext
 
-  sparkContext.setLogLevel("ERROR")
+  sparkContext.setLogLevel("INFO")
   import sparkSession.implicits._ //required for conversions
 
   test("Case 1: Show will show a minimal amount of data from the spark data set") {
@@ -36,11 +36,6 @@ class SparkDataFramesSpec extends FunSuite with Matchers with BeforeAndAfterAll 
     val value1: Dataset[Int] = dataFrame.map(row => row.getInt(0))
   }
 
-  test("Case 4: Show will show a minimal amount of data from the spark data set") {
-    val url = getClass.getResource("/goog.json")
-    val frame: DataFrame = sparkSession.read.csv(url.getFile)
-    frame.filter($"_corrupt_record").show()
-  }
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()

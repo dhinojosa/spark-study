@@ -15,14 +15,16 @@ class SparkDatasetSpec extends FunSuite with Matchers with BeforeAndAfterAll {
   private lazy val sparkSession = SparkSession.builder().config(sparkConf).getOrCreate()
   private lazy val sparkContext = sparkSession.sparkContext
 
-  sparkContext.setLogLevel("ERROR")
+  sparkContext.setLogLevel("INFO")
   lazy val url: URL = getClass.getResource("/goog.csv")
 
   test("Case 1: Show will show a minimal amount of data from the spark data set") {
     import sparkSession.implicits._
     val frame: DataFrame = sparkSession.read.csv(url.getFile)
-    val dataset = sparkSession.sparkContext.parallelize(1 to 1000).toDS()
+    val dataset: Dataset[Int] = sparkSession.sparkContext.parallelize(1 to 1000).toDS()
   }
+
+  //2.0 - Read an ORC or Hive, the default is DataSet, reduceByKey
 
   test("Case 2: Datasets can be created from a Seq") {
     import sparkSession.implicits._

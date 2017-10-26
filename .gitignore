@@ -129,3 +129,6 @@ project/build.properties
 metastore_db/
 .idea
 *.log
+.classpath
+.project
+project/

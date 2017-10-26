@@ -5,7 +5,7 @@ import org.apache.spark.streaming.{Seconds, StreamingContext}
 
 object SparkStreaming extends App {
 
-  //run with nc -lk 9090
+  //run with nc -lk 10150
 
   val conf: SparkConf = new SparkConf().setAppName("streaming_1").setMaster("local[*]")
   val streamingContext = new StreamingContext(conf, Seconds(1)) //Seconds comes from streaming

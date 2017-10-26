@@ -9,30 +9,32 @@ import scala.io.StdIn
 
 
 class SparkElasticSearchSpec extends FunSuite with Matchers with BeforeAndAfterAll {
-  private lazy val sparkConf = new SparkConf().setAppName("spark_basic_rdd").setMaster("local[*]")
+  private lazy val sparkConf = new SparkConf()
+    .setAppName("spark_es_rdd").setMaster("local[*]")
     .set("es.index.auto.create", "true")
-    .set("es.nodes", "54.212.31.19")
+    .set("es.nodes", "es0") //Place your address here
     .set("es.port", "9200")
     .set("es.net.http.auth.user", "user")
     .set("es.nodes.wan.only", "true")
     .set("es.http.timeout", "5000")
-    .set("es.net.http.auth.pass", "")
+    .set("es.net.http.auth.pass", "password")
 
 
   private lazy val sparkSession = SparkSession.builder().config(sparkConf).getOrCreate()
   private lazy val sparkContext = sparkSession.sparkContext
 
-  sparkContext.setLogLevel("ERROR")
+  sparkContext.setLogLevel("INFO")
 
   test("Case 1: Saving to elastic search using Map, " +
        "Elastic Search requires that elasticsearch-hadoop be downloaded") {
     import org.elasticsearch.spark._
 
-    val content = Map("title" -> "Using Elasticsearch with Spark",
-      "author" -> "Coin Bank",
-      "content" -> "Using Elastic Search is a fine deal")
+    val content = Map("title" -> "I love Dallas AT&T",
+      "author" -> "Danno",
+      "content" -> "Using Elastic Search is a fine deal with Spark.  Rock on Forever!")
 
-    sparkContext.makeRDD(Seq(content)).saveToEs("blogs/currentevents")
+    val value1: RDD[Map[String, String]] = sparkContext.makeRDD(Seq(content))
+    value1.saveToEs("blogs/currentevents")
 
     println("Saved!")
   }
