@@ -11,8 +11,6 @@ resolvers += "Conjars" at "http://conjars.org/repo"
 
 val sparkVersion = "2.2.1"
 
-enablePlugins(JavaAppPackaging)
-
 mainClass in Compile := Some("com.xyzcorp.SimpleSpark")
 
 test in assembly := {}
