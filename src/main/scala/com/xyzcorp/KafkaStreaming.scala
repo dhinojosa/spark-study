@@ -20,10 +20,10 @@ object KafkaStreaming extends App {
   )
 
   val conf: SparkConf = new SparkConf().setAppName("streaming_1").setMaster("local[*]")
-  val streamingContext = new StreamingContext(conf, Seconds(1)) //Seconds comes from streaming
+  val streamingContext: StreamingContext = new StreamingContext(conf, Seconds(1)) //Seconds comes from streaming
   streamingContext.sparkContext.setLogLevel("INFO")
 
-  val topics = Array("scaled-cities")
+  val topics: Array[String] = Array("scaled-cities")
   val stream: InputDStream[ConsumerRecord[String, String]] =
     KafkaUtils.createDirectStream[String, String](
     streamingContext,
@@ -31,7 +31,7 @@ object KafkaStreaming extends App {
     Subscribe[String, String](topics, kafkaParams)
   )
 
-  stream.map(cr => "Received: " + cr.value()).foreachRDD(rdd => rdd.foreach(println))
+  stream.map(cr => "Received: " + cr.value()).foreachRDD(rdd => rdd.foreach(s => println))
 
   streamingContext.start()
   streamingContext.awaitTermination()

@@ -9,7 +9,20 @@ fork in run := true
 
 resolvers += "Conjars" at "http://conjars.org/repo"
 
-val sparkVersion = "2.2.0" //Danno
+val sparkVersion = "2.2.1"
+
+enablePlugins(JavaAppPackaging)
+
+mainClass in Compile := Some("com.xyzcorp.SimpleSpark")
+
+test in assembly := {}
+
+assemblyMergeStrategy in assembly := {
+  case PathList("META-INF", xs @ _*) => MergeStrategy.discard
+  case x =>
+    println(s"unknown and resolving $x")
+    MergeStrategy.first
+}
 
 libraryDependencies ++= Seq(
 
@@ -18,15 +31,23 @@ libraryDependencies ++= Seq(
 
   //Spark Core
   //In production you will need to put this dependency as scope provided
-  "org.apache.spark" %% "spark-core" % sparkVersion,
+  "org.apache.spark" %% "spark-core" % sparkVersion % "provided",
 
   //Spark SQL
   //In production you will need to put this dependency as scope provided
-  "org.apache.spark" %% "spark-sql" % sparkVersion,
+  "org.apache.spark" %% "spark-sql" % sparkVersion % "provided",
 
   //Spark Streaming
   //In production you will need to put this dependency as scope provided
-  "org.apache.spark" %% "spark-streaming" % sparkVersion,
+  "org.apache.spark" %% "spark-streaming" % sparkVersion % "provided",
+
+  //Spark Mllib
+  //In production you will need to put this dependency as scope provided
+  "org.apache.spark" %% "spark-mllib" % sparkVersion % "provided",
+
+  //Spark Graphx
+  //In production you will need to put this dependency as scope provided
+  "org.apache.spark" %% "spark-graphx" % sparkVersion % "provided",
 
   //Hadoop AWS
   "org.apache.hadoop" % "hadoop-aws" % "2.8.1",
@@ -44,9 +65,6 @@ libraryDependencies ++= Seq(
   "commons-httpclient" % "commons-httpclient" % "3.1",
 
   //Kafka
-  "org.apache.spark" %% "spark-streaming-kafka-0-10" % sparkVersion,
-
-  //Not Spark Related: Used to generate data
-  "com.typesafe.akka" %% "akka-stream" % "2.5.6"
+  "org.apache.spark" %% "spark-streaming-kafka-0-10" % sparkVersion
 )
 

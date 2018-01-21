@@ -17,7 +17,7 @@ class StandardPartitioner extends Partitioner {
 
   override def getPartition(key: Any): Int = {
     val s = key.asInstanceOf[String]
-    if (s == "even") 0 else 1;
+    if (s == "even") 0 else 1
   }
 }
 

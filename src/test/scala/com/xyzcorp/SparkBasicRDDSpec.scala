@@ -24,7 +24,7 @@ class SparkBasicRDDSpec extends FunSuite with Matchers with BeforeAndAfterAll {
     val lines: RDD[String] = sparkContext.textFile(fileLocation, 3)
     val lineLengths: RDD[Int] = lines.map(s => s.length)
     val totalLength: Int = lineLengths.reduce((a, b) => a + b)
-    totalLength should be(25566)
+    totalLength should be(25560)
   }
 
   test("Case 2: Parallelize will produce a stream of information across 4 partitions") {
