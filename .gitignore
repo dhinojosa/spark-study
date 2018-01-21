@@ -131,4 +131,38 @@ metastore_db/
 *.log
 .classpath
 .project
-project/
+### Scala template
+*.class
+### Eclipse template
+
+
+# External tool builders
+
+# Locally stored "Eclipse launch configurations"
+
+# PyDev specific (Python IDE for Eclipse)
+
+# CDT-specific (C/C++ Development Tooling)
+
+# CDT- autotools
+.autotools
+
+# Java annotation processor (APT)
+
+# PDT-specific (PHP Development Tools)
+
+# sbteclipse plugin
+
+# Tern plugin
+
+# TeXlipse plugin
+
+# STS (Spring Tool Suite)
+
+# Code Recommenders
+
+# Scala IDE specific (Scala & Java development for Eclipse)
+### SBT template
+# Simple Build Tool
+# http://www.scala-sbt.org/release/docs/Getting-Started/Directories.html#configuring-version-control
+
