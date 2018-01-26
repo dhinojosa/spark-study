@@ -30,17 +30,9 @@ lazy val api = (project in file("spark-api"))
 lazy val app = (project in file("spark-app"))
   .settings(commonSettings)
   .settings(Seq(
-    mainClass in Compile := Some("com.xyzcorp.SimpleSpark"),
-    test in assembly := {},
-    assemblyMergeStrategy in assembly := {
-      case PathList("META-INF", xs@_*) =>
-        MergeStrategy.discard
-      case x =>
-        println(s"unknown and resolving $x")
-        MergeStrategy.first
-    }
-  )
-  )
+    mainClass in Compile := Some("com.xyzcorp.SparkPi"),
+    assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false),
+  ))
 
 lazy val streaming = (project in file("spark-streaming"))
   .settings(commonSettings)

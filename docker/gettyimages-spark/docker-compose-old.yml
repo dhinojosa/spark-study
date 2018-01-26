@@ -29,7 +29,7 @@ worker1:
   command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://master:7077
   hostname: worker1
   environment:
-    SPARK_CONF_DIR: /conf
+    SPARK_CONF_DIR: /conf1
     SPARK_WORKER_CORES: 2
     SPARK_WORKER_MEMORY: 1g
     SPARK_WORKER_PORT: 8881
@@ -47,7 +47,7 @@ worker1:
   ports:
     - 8081:8081
   volumes:
-    - ./conf/worker2:/conf
+    - ./conf2/worker1:/conf
     - ./data:/tmp/data
 
 worker2:
@@ -55,7 +55,7 @@ worker2:
   command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://master:7077
   hostname: worker2
   environment:
-    SPARK_CONF_DIR: /conf
+    SPARK_CONF_DIR: /conf2
     SPARK_WORKER_CORES: 2
     SPARK_WORKER_MEMORY: 1g
     SPARK_WORKER_PORT: 8882
@@ -73,5 +73,5 @@ worker2:
   ports:
     - 8082:8082
   volumes:
-    - ./conf/worker2:/conf
+    - ./conf2/worker2:/conf2
     - ./data2:/tmp/data
