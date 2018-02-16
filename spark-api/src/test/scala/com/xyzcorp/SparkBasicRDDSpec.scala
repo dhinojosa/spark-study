@@ -32,14 +32,17 @@ class SparkBasicRDDSpec extends FunSuite with Matchers with BeforeAndAfterAll {
     totalLength should be(25560)
   }
 
-  test("Case 2: Parallelize will produce a stream of information across 4 partitions") {
+  test(
+    "Case 2: Parallelize will produce a stream of information across 4 partitions")
+  {
     val paralleled = sparkContext.parallelize(1 to 10, 4)
     val result = paralleled.map(x => x + 40).collect()
     logger.info("The result is %s".format(result))
     result should be(Array(41, 42, 43, 44, 45, 46, 47, 48, 49, 50))
   }
 
-  test("Case 3: Distinct will retrieve all the content and show distinct items") {
+  test("Case 3: Distinct will retrieve all the content and show distinct items")
+  {
     val fileLocation = getClass.getResource("/rotj.txt").getPath
     val lines: RDD[String] = sparkContext.textFile(fileLocation, 5)
     val words: RDD[String] = lines
@@ -164,10 +167,8 @@ class SparkBasicRDDSpec extends FunSuite with Matchers with BeforeAndAfterAll {
     words.count
   }
 
-
-  test(
-    "Case 9: reduce just operates like standard Scala by bringing all the content in by reduction")
-  {
+  test("""Case 9: reduce just operates like standard Scala
+        by bringing all the content in by reduction""") {
     val total = sparkContext.parallelize(1 to 5).reduce(_ * _)
     total should be(120)
   }
@@ -177,6 +178,12 @@ class SparkBasicRDDSpec extends FunSuite with Matchers with BeforeAndAfterAll {
     val dataFrames: DataFrame = dataSetLong.toDF("numbers")
     val rdd: RDD[Row] = dataFrames.rdd
     rdd.map(row => row.getLong(0)).foreach(x => println(x))
+  }
+
+  test("Case 11: To DataFrame can take an RDD and convert to a DataFrame") {
+    val rdd = sparkContext.parallelize(1 to 100)
+    val dataFrame = rdd.toDF("amounts")
+    val dataSet = dataFrame.map(row => row.getInt(0))
   }
 
   override protected def beforeAll(): Unit = {
