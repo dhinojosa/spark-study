@@ -1,0 +1,7 @@
+1,Reginald Dwight,Awesomesauce
+2,Steve Jobs,Late Apple CEO
+3,Elon Musk,Tesla CEO
+4,Mary Barra,GM CEO
+6,Majora Carter,Activist
+7,Nora Roberts,Author
+8,anononymous,Anonymous

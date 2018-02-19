@@ -1,3 +1,4 @@
+
 val sparkVersion = "2.2.1"
 
 lazy val root = (project in file("."))
@@ -11,52 +12,66 @@ lazy val commonSettings = Seq(
   fork in run := true,
   resolvers += "Conjars" at "http://conjars.org/repo",
   libraryDependencies ++= Seq(
-    //Testing
     "org.scalatest" %% "scalatest" % "3.0.4" % "test",
-
-    //Spark Core
-    //In production you will need to put this dependency as scope provided
-    "org.apache.spark" %% "spark-core" % sparkVersion % "provided",
-
-    //Spark SQL
-    //In production you will need to put this dependency as scope provided
-    "org.apache.spark" %% "spark-sql" % sparkVersion % "provided"
   )
+)
+
+lazy val sparkDependencies = Seq("spark-core", "spark-sql")
+
+lazy val providedSparkDependencies =
+  sparkDependencies.map("org.apache.spark" %% _ % sparkVersion % "provided")
+
+lazy val unprovidedSparkDependencies = sparkDependencies
+  .map("org.apache.spark" %% _ % sparkVersion)
+
+lazy val unprovidedSettings = Seq(
+  libraryDependencies ++= unprovidedSparkDependencies
+)
+
+lazy val providedSettings = Seq(
+  libraryDependencies ++= providedSparkDependencies
 )
 
 lazy val api = (project in file("spark-api"))
   .settings(commonSettings)
+  .settings(unprovidedSettings)
 
 lazy val app = (project in file("spark-app"))
   .settings(commonSettings)
+  .settings(providedSettings)
   .settings(Seq(
     mainClass in Compile := Some("com.xyzcorp.SparkPi"),
-    assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false),
+    assemblyOption in assembly :=
+      (assemblyOption in assembly).value.copy(includeScala = false),
   ))
 
 lazy val streaming = (project in file("spark-streaming"))
   .settings(commonSettings)
+  .settings(unprovidedSettings)
   .settings(
     libraryDependencies +=
-      "org.apache.spark" %% "spark-streaming" % sparkVersion % "provided"
+      "org.apache.spark" %% "spark-streaming" % sparkVersion
   )
 
 lazy val graphx = (project in file("spark-graphx"))
   .settings(commonSettings)
+  .settings(unprovidedSettings)
   .settings(Seq(
     libraryDependencies +=
-      "org.apache.spark" %% "spark-graphx" % sparkVersion % "provided",
+      "org.apache.spark" %% "spark-graphx" % sparkVersion
   ))
 
 lazy val mllib = (project in file("spark-mllib"))
   .settings(commonSettings)
+  .settings(unprovidedSettings)
   .settings(Seq(
     libraryDependencies +=
-      "org.apache.spark" %% "spark-mllib" % sparkVersion % "provided"
+      "org.apache.spark" %% "spark-mllib" % sparkVersion
   ))
 
 lazy val cassandra = (project in file("spark-cassandra"))
   .settings(commonSettings)
+  .settings(unprovidedSettings)
   .settings(Seq(
     libraryDependencies +=
       "com.datastax.spark" %% "spark-cassandra-connector" % "2.0.3"
@@ -64,6 +79,7 @@ lazy val cassandra = (project in file("spark-cassandra"))
 
 lazy val elasticsearch = (project in file("spark-elasticsearch"))
   .settings(commonSettings)
+  .settings(unprovidedSettings)
   .settings(Seq(
     libraryDependencies ++= Seq(
       //Elastic Search
@@ -77,6 +93,7 @@ lazy val elasticsearch = (project in file("spark-elasticsearch"))
 
 lazy val kafka = (project in file("spark-kafka"))
   .settings(commonSettings)
+  .settings(unprovidedSettings)
   .settings(Seq(
     libraryDependencies ++= Seq(
       "org.apache.spark" %% "spark-streaming" % sparkVersion,
@@ -86,15 +103,16 @@ lazy val kafka = (project in file("spark-kafka"))
 
 lazy val s3 = (project in file("spark-s3"))
   .settings(commonSettings)
+  .settings(unprovidedSettings)
   .settings(Seq(
     libraryDependencies +=
       "org.apache.hadoop" % "hadoop-aws" % "2.8.1"
   ))
 
-lazy val hdfs= (project in file("spark-hdfs"))
+lazy val hdfs = (project in file("spark-hdfs"))
   .settings(commonSettings)
+  .settings(unprovidedSettings)
   .settings(Seq(
     libraryDependencies +=
       "org.apache.hadoop" % "hadoop-client" % "2.8.1"
   ))
-
