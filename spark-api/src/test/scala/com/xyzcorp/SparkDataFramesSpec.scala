@@ -425,7 +425,7 @@ class SparkDataFramesSpec
   }
 
   test("Case 26: Joining while getting rid of duplicate keys") {
-    val outerjoin = val outerjoin = cities.join(
+    val outerjoin = cities.join(
       teams.withColumnRenamed("id", "team_id"),
       cities.col("id") === teams.col("city_id"), "outer")
       .withColumnRenamed("id", "city_id")
