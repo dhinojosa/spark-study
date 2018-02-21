@@ -10,10 +10,7 @@ import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
 
 import scala.io.StdIn
 
-//case class Trade(Date: String, Open: Double, High: Double, Low: Double,
- //                 Close:Double, Volume:Double)
-
-
+//Case Class
 case class Trade(date: String, open: Double, high: Double,
                             low: Double, close: Double, volume: Long) {
   private val formatter = DateTimeFormatter.ofPattern("d-MMM-yy")
@@ -24,7 +21,9 @@ case class Trade(date: String, open: Double, high: Double,
 class SparkDatasetSpec extends FunSuite with Matchers with BeforeAndAfterAll {
 
 
-  private lazy val sparkConf = new SparkConf().setAppName("spark_basic_dataset").setMaster("local[*]")
+  private lazy val sparkConf = new SparkConf()
+    .setAppName("spark_basic_dataset")
+    .setMaster("local[*]")
   private lazy val sparkSession = SparkSession.builder().config(sparkConf).getOrCreate()
   private lazy val sparkContext = sparkSession.sparkContext
 
@@ -119,16 +118,30 @@ class SparkDatasetSpec extends FunSuite with Matchers with BeforeAndAfterAll {
       .option("inferSchema", "true")
       .csv(url.getFile)
       .as[Trade]
+    stockTransactions.show()
+  }
+
+  test("Case 11: Converting a row to a case class") {
+    val url = getClass.getResource("/goog.csv")
+    import sparkSession.implicits._
+    val stockTransactions = sparkSession.read
+      .option("header", "true")
+      .option("inferSchema", "true")
+      .csv(url.getFile)
+      .as[Trade]
     stockTransactions
       .filter(_.getLocalDate.getYear == 2017)
       .foreach(st => println(st.volume))
   }
 
 
-  test("Case 11: groupByKey") {
+  test("Case 12: groupByKey can group by a month, careful that we can only " +
+    "operate on values that are primitives or case classes") {
+
     val url = getClass.getResource("/goog.csv")
 
     import sparkSession.implicits._
+
     val stockTransactions = sparkSession.read
       .option("header", "true")
       .option("inferSchema", "true")
@@ -137,7 +150,6 @@ class SparkDatasetSpec extends FunSuite with Matchers with BeforeAndAfterAll {
     val r = stockTransactions
       .groupByKey(_.getLocalDate.getMonth.getValue)
   }
-
 
   override protected def beforeAll(): Unit = {
     println("Setting up the spark context")

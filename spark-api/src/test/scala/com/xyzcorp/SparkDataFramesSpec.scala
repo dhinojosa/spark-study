@@ -53,6 +53,7 @@ class SparkDataFramesSpec
     println(schema)
   }
 
+
   test(
     """Case 4: Reading the Schema from JSON, something to be aware of,
           is that json will need to be a line by line JSON. You also can
@@ -81,7 +82,23 @@ class SparkDataFramesSpec
     pending
   }
 
-  test("""Case 6: Don't like the schema? Make your own!""") {
+  test(
+    """Case 6: Provide the solution to sort by the high column again, but
+      |this time add the method explain(true) at the end of the chain, true
+      |shows the full mapping of how the data will be analyzed""".stripMargin) {
+
+    val url = this.getClass.getResource("/goog.csv")
+    val frame: DataFrame = sparkSession
+      .read
+      .option("header", "true")
+      .option("inferSchema", "true")
+      .csv(url.getFile)
+
+    frame.sort("High").explain(true)
+    pending
+  }
+
+  test("""Case 7: Don't like the schema? Make your own!""") {
     val schema = StructType(Array(
       StructField("Closing", DoubleType, nullable = false),
       StructField("Trade Date", StringType, nullable = false),
@@ -99,7 +116,7 @@ class SparkDataFramesSpec
     frame.show()
   }
 
-  test("""Case 7: We can also apply some metadata to the schema""") {
+  test("""Case 8: We can also apply some metadata to the schema""") {
     val schema = StructType(Array(
       StructField("Closing",
         DoubleType,
@@ -121,7 +138,7 @@ class SparkDataFramesSpec
   }
 
   test(
-    """Case 8: Columns represent columns and can be used for querying
+    """Case 9: Columns represent columns and can be used for querying
        There are four different formats in Scala to represent a column.
        These come from the org.apache.spark.sql package""") {
     import org.apache.spark.sql.functions._
@@ -131,7 +148,7 @@ class SparkDataFramesSpec
     'someColumnName //Scala Symbol
   }
 
-  test("""Case 8: A Column can be resolved from a DataFrame""") {
+  test("""Case 10: A Column can be resolved from a DataFrame""") {
     val url = this.getClass.getResource("/goog.json")
     val dataFrame = sparkSession.read
       .option("header", "true")
@@ -140,7 +157,7 @@ class SparkDataFramesSpec
     val column = dataFrame.col("Open")
   }
 
-  test("""Case 9: A list of columns can be resolved from a DataFrame""") {
+  test("""Case 11: A list of columns can be resolved from a DataFrame""") {
     val url = this.getClass.getResource("/goog.json")
     val dataFrame = sparkSession.read
       .option("header", "true")
@@ -150,7 +167,7 @@ class SparkDataFramesSpec
   }
 
   test(
-    """Case 10: Expressions can be used to query a DataFrame and has a very
+    """Case 12: Expressions can be used to query a DataFrame and has a very
       | similar flavor to SQL, in fact it is the driving engine to it.""") {
     val url = this.getClass.getResource("/goog.json")
     val dataFrame = sparkSession.read
@@ -165,7 +182,7 @@ class SparkDataFramesSpec
   }
 
   test(
-    """Case 11: Create a query that will show days where the closing price of
+    """Case 13: Create a query that will show days where the closing price of
       | Google's stock is less than the opening price that trading day using
       | an expression. Remove pending when ready""") {
     val url = this.getClass.getResource("/goog.json")
@@ -181,7 +198,7 @@ class SparkDataFramesSpec
   }
 
   test(
-    """Case 12: Create a query that will show days where the closing price of
+    """Case 14: Create a query that will show days where the closing price of
       | Google's stock is less than the opening price that trading day using
       | an expression. Remove pending when ready""") {
     val url = this.getClass.getResource("/goog.json")
@@ -197,14 +214,14 @@ class SparkDataFramesSpec
   }
 
   test(
-    """Case 13: Creating a manual row so as it convert it into dataframe
+    """Case 15: Creating a manual row so as it convert it into dataframe
       |or add it to an existing one""") {
     val newRow = Row("24-Jul-17", 967.84, 967.84, 960.33, 961.08, 1493955)
     println(newRow)
   }
 
   test(
-    """Case 14: Make your own DataFrame using custom Rows.
+    """Case 16: Make your own DataFrame using custom Rows.
       | We will also use
       | parallelize which will create a construct called RDD""") {
 
@@ -230,7 +247,7 @@ class SparkDataFramesSpec
   }
 
   test(
-    """Case 15: Select will select columns from the dataFrame, in this
+    """Case 17: Select will select columns from the dataFrame, in this
       |example we will use it in conjunction with where""".stripMargin) {
     import org.apache.spark.sql.functions._
     val url = this.getClass.getResource("/goog.json")
@@ -244,7 +261,7 @@ class SparkDataFramesSpec
     result.show()
   }
 
-  test("""Case 16: Select can use any manifestation of columns""") {
+  test("""Case 18: Select can use any manifestation of columns""") {
     import org.apache.spark.sql.functions._
     val url = this.getClass.getResource("/goog.json")
     val dataFrame = sparkSession.read

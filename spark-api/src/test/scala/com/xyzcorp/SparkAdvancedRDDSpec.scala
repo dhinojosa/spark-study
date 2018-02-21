@@ -49,7 +49,7 @@ class SparkAdvancedRDDSpec extends FunSuite with Matchers with BeforeAndAfterAll
         on each machine rather than shipping a copy of it with tasks, distributed in an
         efficient manner. Distribution is done efficiently to reduce overhead""") {
 
-    println(sparkContext.uiWebUrl)
+    println(sparkContext.uiWebUrl) //Display the web url
     val accumulator = sparkContext.collectionAccumulator[Long]("worker-disk-drive-space")
     accumulator.reset()
 
@@ -155,19 +155,14 @@ class SparkAdvancedRDDSpec extends FunSuite with Matchers with BeforeAndAfterAll
     }
   }
 
-
-  test("""Case 12: Glom takes parallelized data and brings back data from each partition""") {
-    sparkContext.parallelize(1 to 100, 5).map(x => x + 10).collect()
-  }
-
-
-  test("""Case 13: keyBy is a utility method that tuples rdd""") {
-    val tuples = sparkContext.parallelize(1 to 100, 5).keyBy(i => i % 2 == 0).collect()
+  test("""Case 12: keyBy is a utility method that tuples rdd""") {
+    val tuples: Array[(Boolean, Int)] = sparkContext.parallelize(1 to 100, 5).keyBy(i => i % 2 == 0).collect()
     println(tuples.toList)
   }
 
-  test("""Case 14: partitionBy allows us to create our own Partitioner""") {
-    val tuples = sparkContext.parallelize(1 to 100).keyBy(i => if (i % 2 == 0) "even" else "odd")
+  test("""Case 13: partitionBy allows us to create our own Partitioner""") {
+    val tuples: Array[(String, Int)] = sparkContext.parallelize(1 to 100)
+      .keyBy(i => if (i % 2 == 0) "even" else "odd")
       .partitionBy(new StandardPartitioner).collect()
     println(tuples.toList)
   }

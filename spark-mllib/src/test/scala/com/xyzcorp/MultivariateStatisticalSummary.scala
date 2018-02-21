@@ -34,7 +34,7 @@ class MultivariateStatisticalSummary
     val summary = Statistics.colStats(observations)
     println(summary.mean) // a dense vector containing the mean value for each column
     println(summary.variance) // column-wise variance
-    println(summary.numNonzeros)
+    println(summary.numNonzeros) //All non zeros
   }
 
   override protected def beforeAll(): Unit = {
