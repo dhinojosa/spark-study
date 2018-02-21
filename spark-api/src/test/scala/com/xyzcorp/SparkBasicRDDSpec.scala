@@ -57,7 +57,7 @@ class SparkBasicRDDSpec extends FunSuite with Matchers with BeforeAndAfterAll {
 
   test("Case 4: Sort by will sort the information based on Ordering[T]") {
     getAllWordsFromReturnOfTheJedi.distinct(4)
-      .sortBy(???) //Sort by words
+       //.sortBy(???) //Sort by words
       .foreach(println)
     pending
   }
@@ -101,13 +101,7 @@ class SparkBasicRDDSpec extends FunSuite with Matchers with BeforeAndAfterAll {
        that has been uncached it will recalculate the pipeline and put it in cache again.""")
   {
 
-    val fileLocation = getClass.getResource("/rotj.txt").getPath
-    val lines: RDD[String] = sparkContext.textFile(fileLocation, 5)
-    val words = lines
-      .flatMap(_.split("""\n"""))
-      .filter(!_.isEmpty)
-      .flatMap(_.split("""\W+"""))
-      .map(s => s.map(_.toLower)).cache()
+    val words = getAllWordsFromReturnOfTheJedi
     words.count()
     words.getStorageLevel
     Thread.sleep(2000)
@@ -130,6 +124,15 @@ class SparkBasicRDDSpec extends FunSuite with Matchers with BeforeAndAfterAll {
     val rdd = sparkContext.parallelize(1 to 100)
     val dataFrame = rdd.toDF("amounts")
     val dataSet = dataFrame.map(row => row.getInt(0))
+  }
+
+  test("Case 12: Another example of converting to a DataFrame") {
+    val afcNorth = Seq(("Bengals", "Cincinnati", "Paul Brown Stadium"),
+      ("Steelers", "Pittsburgh", "Heinz Field"),
+      ("Browns", "Cleveland", "FirstEnergy Field"),
+      ("Ravens", "Baltimore", "M&T Bank Stadium"))
+    val afcNorthDataFrame = afcNorth.toDF("NAME", "CITY", "STADIUM")
+    afcNorthDataFrame.show
   }
 
   override protected def beforeAll(): Unit = {

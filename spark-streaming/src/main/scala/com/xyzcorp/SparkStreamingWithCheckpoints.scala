@@ -20,7 +20,7 @@ object StreamFactory {
 
 object SparkStreamingWithCheckpoints extends App {
 
-  //run with nc -lk 9090
+  //run with nc -lk 10150
 
   private val streamingContext: StreamingContext =
     StreamingContext.getOrCreate("/tmp/checkpoints", () => StreamFactory.apply)

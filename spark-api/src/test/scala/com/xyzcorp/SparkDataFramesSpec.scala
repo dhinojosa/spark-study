@@ -1,5 +1,6 @@
 package com.xyzcorp
 
+import org.apache.spark
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{Column, DataFrame, Row, SparkSession}
@@ -94,7 +95,6 @@ class SparkDataFramesSpec
       .option("inferSchema", "true")
       .csv(url.getFile)
 
-    frame.sort("High").explain(true)
     pending
   }
 
@@ -226,10 +226,10 @@ class SparkDataFramesSpec
       | parallelize which will create a construct called RDD""") {
 
     val employeeSchema = new StructType(Array(
-      StructField("firstName", StringType, false),
-      StructField("middleName", StringType, true),
-      StructField("lastName", StringType, false),
-      StructField("salaryPerYear", IntegerType, false)
+      StructField("firstName", StringType, nullable = false),
+      StructField("middleName", StringType, nullable = true),
+      StructField("lastName", StringType, nullable = false),
+      StructField("salaryPerYear", IntegerType, nullable = false)
     ))
 
     val employees =
@@ -238,7 +238,7 @@ class SparkDataFramesSpec
         Row("Ben", null, "Franklin", 82000),
         Row("Toni", null, "Morrisson", 82000))
 
-    val rdd = sparkContext.parallelize(employees)
+    val rdd = sparkContext.parallelize(employees) //uses an rdd more on that
     val dataFrame = sparkSession.createDataFrame(rdd, employeeSchema)
 
     val value = dataFrame.where("length (firstName) == 3")
@@ -272,6 +272,164 @@ class SparkDataFramesSpec
       .select(col("Date"), $"Open", column("Close"), 'Volume)
       .where("Volume > 2000000")
     result.show()
+  }
+
+  test("""Case 19: Select and expr is so common there is selectExpr""") {
+    import org.apache.spark.sql.functions._
+    val url = this.getClass.getResource("/goog.json")
+    val dataFrame = sparkSession.read
+      .option("header", "true")
+      .option("inferSchema", "true")
+      .json(url.getFile)
+    val result = dataFrame.selectExpr("DATE as TRADEDATE", "DATE")
+    result.show()
+  }
+
+  test("""Case 20: Showing all columns while offering an extra.""") {
+    import org.apache.spark.sql.functions._
+    val url = this.getClass.getResource("/goog.json")
+    val dataFrame = sparkSession.read
+      .option("header", "true")
+      .option("inferSchema", "true")
+      .json(url.getFile)
+    val result = dataFrame.selectExpr("*", "DATE as TRADEDATE")
+    result.show()
+  }
+
+  test("""Case 20: You can also include a constant within a dataFrame
+      |using CONSTANT""") {
+    import org.apache.spark.sql.functions._
+    val url = this.getClass.getResource("/goog.json")
+    val dataFrame = sparkSession.read
+      .option("header", "true")
+      .option("inferSchema", "true")
+      .json(url.getFile)
+    val result = dataFrame.select(expr("*"), lit(30).as("CONSTANT"))
+    result.show()
+  }
+
+  test(
+    """Case 21: Joining two sets of data. In this case let's say we
+      |only need Spain""".stripMargin) {
+
+    val countriesMedalCountDF =
+      Seq(("United States", "100m Freestyle", 1, 0, 3),
+        ("Spain", "100m Butterfly", 2, 1, 1),
+        ("Japan", "100m Butterfly", 0, 3, 0),
+        ("Spain", "100m Freestyle", 0, 0, 3),
+        ("Uruguay", "100m Breaststroke", 0, 1, 0),
+        ("United States", "100m Breaststroke", 2, 2, 0))
+        .toDF("Country", "Event", "Gold", "Silver", "Bronze")
+
+    val countriesMedalCountDF2 =
+      Seq(("United States", "100m Freestyle", 1, 0, 3),
+        ("Spain", "100m Backstroke", 2, 1, 1),
+        ("Spain", "200m Breaststroke", 1, 0, 0),
+        ("Spain", "500m Freestyle", 3, 0, 0),
+        ("Spain", "1000m Freestyle", 2, 1, 0),
+        ("United States", "100m Breaststroke", 2, 2, 0))
+        .toDF("Country", "Event", "Gold", "Silver", "Bronze")
+
+    val union = countriesMedalCountDF.union(countriesMedalCountDF2.where("country == 'Spain'"))
+    union.show()
+  }
+
+  test(
+    """Case 22: Repartitioning from a DataFrame. This will attempt to
+      |distribute your data across multiple partitions across multiple
+      |machines.  This can be called with a number or by column""") {
+
+    val largeRange = sparkSession.range(1, 1000000).toDF
+    println(largeRange.rdd.getNumPartitions)
+
+    Thread.sleep(1000)
+
+    val largeRangeDistributed = largeRange.repartition(10) //Force it to 10, or
+    // at least
+    // attempt it
+
+    println(largeRangeDistributed.rdd.getNumPartitions)
+  }
+
+  test(
+    """Case 22: Coalesce is the opposite of repartition and will attempt
+      |to bring it down to a certain of partitions but may often times be
+      |overriden""".stripMargin) {
+
+    val largeRange = sparkSession.range(1, 1000000).toDF
+    println(largeRange.rdd.getNumPartitions)
+
+    Thread.sleep(1000)
+
+    val largeRangeDistributed = largeRange.repartition(10) //Force it to 10, or
+    // at least
+    // attempt it
+
+
+    Thread.sleep(1000)
+
+    val coalesced = largeRangeDistributed.coalesce(5)
+
+    println(largeRangeDistributed.rdd.getNumPartitions) //May not be 5
+  }
+
+  test(
+    """Case 23: DataFrames API are powerful enough to create UDF, user
+      |defined functions""".stripMargin) {
+
+    import org.apache.spark.sql.functions._
+
+    def is_odd(x:Int):Boolean = x % 2 != 0
+    val is_odd_udf = udf(is_odd(_:Int):Boolean)
+
+    val url = this.getClass.getResource("/goog.json")
+
+    val dataFrame = sparkSession.read
+      .option("header", "true")
+      .option("inferSchema", "true")
+      .json(url.getFile)
+
+    dataFrame.withColumn("IS_ODD_VOLUME", is_odd_udf('VOLUME)).show(5)
+  }
+
+  val cities: DataFrame = Seq(
+    (1, "San Francisco", "CA"),
+    (2, "Dallas", "TX"),
+    (3, "Pittsburgh", "PA"),
+    (4, "Buffalo", "NY"),
+    (5, "Oklahoma City", "OK"),
+    (6, "New York City", "NY"),
+    (7, "Los Angeles", "CA"),
+    (8, "Omaha", "NE")).toDF("id", "city", "state")
+
+  val teams: DataFrame = Seq(
+    (1, 7, "Rams", "Football"),
+    (2, 7, "Dodgers", "Baseball"),
+    (3, 6, "Giants", "Football"),
+    (4, 1, "Giants", "Baseball"),
+    (5, 4, "Bills", "Football"),
+    (6, 3, "Pirates", "Baseball"),
+    (7, 1, "49ers", "Football"),
+    (8, 3, "Steelers", "Football")).toDF("id", "city_id", "team", "sport_type")
+
+
+  test("Case 24: Inner joins in using Spark Dataframes") {
+    val innerjoin = cities.join(teams, cities.col("id") === teams.col("city_id"))
+    innerjoin.show()
+  }
+
+  test("Case 25: Outer joins in using Spark Dataframes") {
+    val outerjoin = cities.join(teams, cities.col("id") === teams.col
+    ("city_id"), "outer")
+    outerjoin.show()
+  }
+
+  test("Case 26: Joining while getting rid of duplicate keys") {
+    val outerjoin = val outerjoin = cities.join(
+      teams.withColumnRenamed("id", "team_id"),
+      cities.col("id") === teams.col("city_id"), "outer")
+      .withColumnRenamed("id", "city_id")
+    outerjoin.show()
   }
 
   override protected def beforeAll(): Unit = {
