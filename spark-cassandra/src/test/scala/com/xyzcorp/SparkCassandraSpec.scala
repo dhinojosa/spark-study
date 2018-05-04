@@ -11,9 +11,9 @@ import scala.io.StdIn
 
 class SparkCassandraSpec extends FunSuite with Matchers with BeforeAndAfterAll {
   private lazy val sparkConf = new SparkConf().setAppName("spark_cassandra_rdd")
-    .set("spark.cassandra.connection.host", "134.335.437.174")
+    .set("spark.cassandra.connection.host", "cas0")
     .set("spark.cassandra.auth.username", "cassandra")
-    .set("spark.cassandra.auth.password", "BVbrS1SVLjvP")
+    .set("spark.cassandra.auth.password", "pointschism")
     .setMaster("local[*]")
 
   private lazy val sparkSession = SparkSession.builder().config(sparkConf).getOrCreate()

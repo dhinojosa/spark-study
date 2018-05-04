@@ -1,14 +1,16 @@
 package com.xyzcorp
 
 import org.apache.spark.SparkConf
-import org.apache.spark.sql.{Dataset, SparkSession}
+import org.apache.spark.sql.streaming.{OutputMode, StreamingQuery, Trigger}
+import org.apache.spark.sql.types.{StructField, _}
+import org.apache.spark.sql.{DataFrame, ForeachWriter, Row, SparkSession}
 
-object SparkStructuredStreaming extends App {
+object SparkStructuredStreamingFile extends App {
 
   //run with nc -lk 10150
 
   private lazy val sparkConf = new SparkConf()
-    .setAppName("stream_1")
+    .setAppName("stream_structured_file")
     .setMaster("local[*]")
 
   private lazy val sparkSession = SparkSession
@@ -16,30 +18,21 @@ object SparkStructuredStreaming extends App {
     .config(sparkConf)
     .getOrCreate()
 
-  private val lines = sparkSession
+  val schema = StructType(Array(
+    StructField("Date", StringType, nullable = false),
+    StructField("Open", DoubleType, nullable = false),
+    StructField("High", DoubleType, nullable = false),
+    StructField("Low", DoubleType, nullable = false),
+    StructField("Close", DoubleType, nullable = false),
+    StructField("Volume", LongType, nullable = false)))
+
+  private val dataFrame: DataFrame = sparkSession
     .readStream
-    .format("socket")
-    .option("host", "localhost")
-    .option("port", "10150")
-    .load()
+    .option("header", "true")
+    .schema(schema)
+    .csv("file:///Users/danno/tmp/stream-data")
 
-  private lazy val sparkContext = sparkSession.sparkContext
-
-  sparkContext.setLogLevel("INFO")
-
-  import sparkSession.implicits._
-
-  //Dataset is structured
-  val words: Dataset[String] =
-    lines.as[String].flatMap(_.split(" "))
-
-  val wordCounts = words.groupBy("value").count()
-
-  //Structured
-  val query = wordCounts.writeStream
-    .outputMode("complete") //Group By Requires Complete
-    .format("console")
-    .start()
+  val query = dataFrame.writeStream.format("console").start()
 
   query.awaitTermination()
 }

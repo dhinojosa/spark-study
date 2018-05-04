@@ -1,9 +1,11 @@
 package com.xyzcorp
 
-import org.apache.spark
+import java.lang
+
 import org.apache.spark.SparkConf
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.{Column, DataFrame, Row, SparkSession}
+import org.apache.spark.sql._
 import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
 
 import scala.io.StdIn
@@ -25,8 +27,7 @@ class SparkDataFramesSpec
 
   import sparkSession.implicits._ //required for conversions
 
-  test(
-    """Case 1: Show will show a minimal amount
+  test("""Case 1: Show will show a minimal amount
         of data from the spark data set""") {
     val url = this.getClass.getResource("/goog.csv")
     val frame: DataFrame = sparkSession
@@ -45,13 +46,16 @@ class SparkDataFramesSpec
 
   test("""Case 3: Determining the schema automatically""") {
     val url = this.getClass.getResource("/goog.csv")
-    val schema = sparkSession.read
+    val dataFrame = sparkSession.read
       .option("header", "true")
       .option("inferSchema", "true")
       .csv(url.getFile)
-      .schema
 
-    println(schema)
+    val schema = dataFrame.schema
+
+    println(schema) //Show the schema
+
+    dataFrame.show() //Show the data
   }
 
 
@@ -80,7 +84,8 @@ class SparkDataFramesSpec
       .option("header", "true")
       .option("inferSchema", "true")
       .csv(url.getFile)
-    pending
+
+    frame.sort("high").show()
   }
 
   test(
@@ -95,16 +100,19 @@ class SparkDataFramesSpec
       .option("inferSchema", "true")
       .csv(url.getFile)
 
-    pending
+    println(frame.sort("High").show())
   }
 
   test("""Case 7: Don't like the schema? Make your own!""") {
+
+    //Date,Open,High,Low,Close,Volume
+
     val schema = StructType(Array(
-      StructField("Closing", DoubleType, nullable = false),
       StructField("Trade Date", StringType, nullable = false),
+      StructField("Open", DoubleType, nullable = false),
       StructField("High", DoubleType, nullable = false),
       StructField("Low", DoubleType, nullable = false),
-      StructField("Open", DoubleType, nullable = false),
+      StructField("Closing", DoubleType, nullable = false),
       StructField("Trade Volume", LongType, nullable = false))
     )
     val url = this.getClass.getResource("/goog.csv")
@@ -178,19 +186,22 @@ class SparkDataFramesSpec
     import org.apache.spark.sql.functions._
     val column: Column = expr("Volume > 2000000")
 
-    println(dataFrame.where(column).show())
+    dataFrame.where(column).show()
   }
 
   test(
     """Case 13: Create a query that will show days where the closing price of
       | Google's stock is less than the opening price that trading day using
       | an expression. Remove pending when ready""") {
+    import org.apache.spark.sql.functions._
+
     val url = this.getClass.getResource("/goog.json")
+
     val dataFrame = sparkSession.read
       .option("header", "true")
       .option("inferSchema", "true")
       .json(url.getFile)
-    val column: Column = ???
+    val column: Column = expr("Close > Open")
 
     println(dataFrame.where(column).show())
 
@@ -238,7 +249,7 @@ class SparkDataFramesSpec
         Row("Ben", null, "Franklin", 82000),
         Row("Toni", null, "Morrisson", 82000))
 
-    val rdd = sparkContext.parallelize(employees) //uses an rdd more on that
+    val rdd: RDD[Row] = sparkContext.parallelize(employees) //uses an rdd more on that
     val dataFrame = sparkSession.createDataFrame(rdd, employeeSchema)
 
     val value = dataFrame.where("length (firstName) == 3")
@@ -296,7 +307,8 @@ class SparkDataFramesSpec
     result.show()
   }
 
-  test("""Case 20: You can also include a constant within a dataFrame
+  test(
+    """Case 21: You can also include a constant within a dataFrame
       |using CONSTANT""") {
     import org.apache.spark.sql.functions._
     val url = this.getClass.getResource("/goog.json")
@@ -309,7 +321,7 @@ class SparkDataFramesSpec
   }
 
   test(
-    """Case 21: Joining two sets of data. In this case let's say we
+    """Case 22: Joining two sets of data. In this case let's say we
       |only need Spain""".stripMargin) {
 
     val countriesMedalCountDF =
@@ -330,12 +342,14 @@ class SparkDataFramesSpec
         ("United States", "100m Breaststroke", 2, 2, 0))
         .toDF("Country", "Event", "Gold", "Silver", "Bronze")
 
-    val union = countriesMedalCountDF.union(countriesMedalCountDF2.where("country == 'Spain'"))
+    val union = countriesMedalCountDF
+      .union(
+        countriesMedalCountDF2.where("country == 'Spain'"))
     union.show()
   }
 
   test(
-    """Case 22: Repartitioning from a DataFrame. This will attempt to
+    """Case 23: Repartitioning from a DataFrame. This will attempt to
       |distribute your data across multiple partitions across multiple
       |machines.  This can be called with a number or by column""") {
 
@@ -352,19 +366,21 @@ class SparkDataFramesSpec
   }
 
   test(
-    """Case 22: Coalesce is the opposite of repartition and will attempt
+    """Case 24: Coalesce is the opposite of repartition and will attempt
       |to bring it down to a certain of partitions but may often times be
       |overriden""".stripMargin) {
 
-    val largeRange = sparkSession.range(1, 1000000).toDF
+    val range: Dataset[lang.Long] = sparkSession.range(1, 1000000)
+    val largeRange = range.toDF
     println(largeRange.rdd.getNumPartitions)
 
     Thread.sleep(1000)
 
-    val largeRangeDistributed = largeRange.repartition(10) //Force it to 10, or
+    val largeRangeDistributed = largeRange.repartition(10)
+
+    //Force it to 10, or
     // at least
     // attempt it
-
 
     Thread.sleep(1000)
 
@@ -374,13 +390,14 @@ class SparkDataFramesSpec
   }
 
   test(
-    """Case 23: DataFrames API are powerful enough to create UDF, user
+    """Case 25: DataFrames API are powerful enough to create UDF, user
       |defined functions""".stripMargin) {
 
     import org.apache.spark.sql.functions._
 
-    def is_odd(x:Int):Boolean = x % 2 != 0
-    val is_odd_udf = udf(is_odd(_:Int):Boolean)
+    def is_odd(x: Int): Boolean = x % 2 != 0
+
+    val is_odd_udf = udf(is_odd(_: Int): Boolean)
 
     val url = this.getClass.getResource("/goog.json")
 
@@ -413,18 +430,19 @@ class SparkDataFramesSpec
     (8, 3, "Steelers", "Football")).toDF("id", "city_id", "team", "sport_type")
 
 
-  test("Case 24: Inner joins in using Spark Dataframes") {
-    val innerjoin = cities.join(teams, cities.col("id") === teams.col("city_id"))
+  test("Case 26: Inner joins in using Spark Dataframes") {
+    val innerjoin = cities
+      .join(teams, cities.col("id") === teams.col("city_id"))
     innerjoin.show()
   }
 
-  test("Case 25: Outer joins in using Spark Dataframes") {
+  test("Case 27: Outer joins in using Spark Dataframes") {
     val outerjoin = cities.join(teams, cities.col("id") === teams.col
     ("city_id"), "outer")
     outerjoin.show()
   }
 
-  test("Case 26: Joining while getting rid of duplicate keys") {
+  test("Case 28: Joining while getting rid of duplicate keys") {
     val outerjoin = cities.join(
       teams.withColumnRenamed("id", "team_id"),
       cities.col("id") === teams.col("city_id"), "outer")

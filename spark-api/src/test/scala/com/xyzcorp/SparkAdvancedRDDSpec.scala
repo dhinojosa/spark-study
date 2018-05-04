@@ -147,7 +147,7 @@ class SparkAdvancedRDDSpec extends FunSuite with Matchers with BeforeAndAfterAll
 
       import scala.util.Random
       val randomFileName = new Random().nextInt()
-      val pw = new PrintWriter(new File(s"/tmp/random-file-${randomFileName}.txt"))
+      val pw = new PrintWriter(new File(s"/tmp/random-file-$randomFileName.txt"))
       while (iter.hasNext) {
         pw.write(iter.next())
       }
@@ -156,7 +156,9 @@ class SparkAdvancedRDDSpec extends FunSuite with Matchers with BeforeAndAfterAll
   }
 
   test("""Case 12: keyBy is a utility method that tuples rdd""") {
-    val tuples: Array[(Boolean, Int)] = sparkContext.parallelize(1 to 100, 5).keyBy(i => i % 2 == 0).collect()
+    val tuples: Array[(Boolean, Int)] = sparkContext
+      .parallelize(1 to 100, 5)
+      .keyBy(i => i % 2 == 0).collect()
     println(tuples.toList)
   }
 

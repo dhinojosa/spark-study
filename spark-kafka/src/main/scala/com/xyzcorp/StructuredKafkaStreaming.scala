@@ -1,15 +1,10 @@
 package com.xyzcorp
 
-import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.spark.SparkConf
-import org.apache.spark.streaming.dstream.InputDStream
-import org.apache.spark.streaming.{Seconds, StreamingContext}
-import org.apache.spark.streaming.kafka010.ConsumerStrategies.Subscribe
-import org.apache.spark.streaming.kafka010.KafkaUtils
-import org.apache.spark.streaming.kafka010.LocationStrategies.PreferConsistent
+import org.apache.spark.sql.SparkSession
 
-object UnstructuredKafkaStreaming extends App {
+object StructuredKafkaStreaming extends App {
   val kafkaParams: Map[String, AnyRef] = Map[String, Object](
     "bootstrap.servers" -> "kaf0:9092,kaf1:9092", //Use your own addresses
     "key.deserializer" -> classOf[StringDeserializer],
@@ -23,23 +18,20 @@ object UnstructuredKafkaStreaming extends App {
     .setAppName("kafka_streaming")
     .setMaster("local[*]")
 
-  val streamingContext: StreamingContext = new StreamingContext(
-    conf,
-    Seconds(1)) //Seconds comes from streaming
+  private lazy val sparkSession = SparkSession
+    .builder()
+    .config(conf)
+    .getOrCreate()
 
-  streamingContext.sparkContext.setLogLevel("INFO")
+  val df = sparkSession
+    .readStream
+    .format("kafka")
+    .option("kafka.bootstrap.servers", "kaf0:9092,kaf1:9092")
+    .option("subscribe", "scaled-cities")
+    .load()
 
-  val topics: Array[String] = Array("scaled-cities")
-  val stream: InputDStream[ConsumerRecord[String, String]] =
-    KafkaUtils.createDirectStream[String, String](
-      streamingContext,
-      PreferConsistent,
-      Subscribe[String, String](topics, kafkaParams)
-    )
+  df.selectExpr("CAST(key AS STRING)", "CAST(value AS STRING)")
+    .as[(String, String)]
 
-  stream.map(cr => "Received: " + cr.value())
-    .foreachRDD(rdd => rdd.foreach(s => println))
 
-  streamingContext.start()
-  streamingContext.awaitTermination()
 }

@@ -1,6 +1,7 @@
 package com.xyzcorp
 
 import org.apache.spark.SparkConf
+import org.apache.spark.sql.streaming.OutputMode
 import org.apache.spark.sql.{Dataset, SparkSession}
 
 object SparkStructuredStreaming extends App {
@@ -16,7 +17,7 @@ object SparkStructuredStreaming extends App {
     .config(sparkConf)
     .getOrCreate()
 
-  private val lines = sparkSession
+  private val stream = sparkSession
     .readStream
     .format("socket")
     .option("host", "localhost")
@@ -29,13 +30,16 @@ object SparkStructuredStreaming extends App {
 
   import sparkSession.implicits._
 
+  //Dataset is structured
   val words: Dataset[String] =
-    lines.as[String].flatMap(_.split(" "))
+    stream.as[String].flatMap(_.split(" "))
 
   val wordCounts = words.groupBy("value").count()
 
-  val query = wordCounts.writeStream
-    .outputMode("complete")
+  //Structured
+  val query = wordCounts
+    .writeStream
+    .outputMode(OutputMode.Complete()) //Group By Requires Complete
     .format("console")
     .start()
 

@@ -6,11 +6,10 @@ import org.apache.spark.streaming.{Seconds, StreamingContext}
 
 object SparkDiscretizedStreamingWithWindows extends App {
 
-  //
-  //run with nc -lk 9090
+  //run with nc -lk 10150
 
   val conf: SparkConf = new SparkConf()
-    .setAppName("streaming_1")
+    .setAppName("streaming_windowed")
     .setMaster("local[*]")
 
   val streamingContext: StreamingContext =
@@ -21,7 +20,8 @@ object SparkDiscretizedStreamingWithWindows extends App {
   val lines: ReceiverInputDStream[String] =
     streamingContext.socketTextStream("localhost", 10150)
 
-  //produce information over the last 30 seconds of data, every 10 seconds
+  //produce information over the last 30 seconds of data,
+  // every 10 seconds
   val windowedStream: DStream[String] =
     lines.window(Seconds(30), Seconds(10))
 

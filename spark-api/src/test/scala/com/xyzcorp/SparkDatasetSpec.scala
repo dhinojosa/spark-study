@@ -1,5 +1,6 @@
 package com.xyzcorp
 
+import java.lang
 import java.net.URL
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -42,12 +43,13 @@ class SparkDatasetSpec extends FunSuite with Matchers with BeforeAndAfterAll {
 
   test("Case 2: Datasets can be created from a Seq") {
     import sparkSession.implicits._
-    val dataset = sparkSession.createDataset(Seq("One", "Two", "Three"))
-    dataset.foreach(s => println(s))
+    val dataset: Dataset[String] = sparkSession.createDataset(List("One", "Two", "Three"))
+    dataset.map(s => s.length).foreach(s => println(s))
   }
 
   test("Case 3: Dataset can be explained before run") {
-    sparkSession.range(1).filter(_ == 0).explain(true)
+    val value: Dataset[lang.Long] = sparkSession.range(1, 100)
+    value.filter(x => x % 2 == 0).explain(true)
   }
 
   test("Case 4: Dataset can also be shown") {
@@ -147,8 +149,11 @@ class SparkDatasetSpec extends FunSuite with Matchers with BeforeAndAfterAll {
       .option("inferSchema", "true")
       .csv(url.getFile)
       .as[Trade]
-    val r = stockTransactions
+
+    val r: KeyValueGroupedDataset[Int, Trade] = stockTransactions
       .groupByKey(_.getLocalDate.getMonth.getValue)
+
+    println(r.keys.collect())
   }
 
   override protected def beforeAll(): Unit = {

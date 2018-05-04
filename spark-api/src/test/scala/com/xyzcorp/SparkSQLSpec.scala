@@ -63,11 +63,10 @@ class SparkSQLSpec extends FunSuite with Matchers with BeforeAndAfterAll {
 
     frame.createOrReplaceTempView("google_data")
 
-    val result = sparkSession.sql(???)
+    val result = sparkSession.sql("Select open, close, date from google_data " +
+      "where close > open")
     result.show()
     result.explain(true)
-
-    pending
   }
 
   test(

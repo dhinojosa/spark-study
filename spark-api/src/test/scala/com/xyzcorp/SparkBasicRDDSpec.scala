@@ -27,12 +27,12 @@ class SparkBasicRDDSpec extends FunSuite with Matchers with BeforeAndAfterAll {
   def getAllWordsFromReturnOfTheJedi:RDD[String] = {
     val fileLocation = getClass.getResource("/rotj.txt").getPath
     val lines: RDD[String] = sparkContext.textFile(fileLocation, 5)
-    ???
+    lines.flatMap(ln => ln.split(" ")).map(w => w.toLowerCase)
   }
 
   test("""Case 1: Read from from a file and read the information
-      |from the and count all the lengths. An RDD is read direct from a
-      |sparkContext""") {
+      |  from the and count all the lengths. An RDD is read direct from a
+      |  sparkContext""".stripMargin) {
 
     val fileLocation = getClass.getResource("/goog.json").getPath
     val lines: RDD[String] = sparkContext.textFile(fileLocation, 3)
@@ -41,8 +41,8 @@ class SparkBasicRDDSpec extends FunSuite with Matchers with BeforeAndAfterAll {
     totalLength should be(25560) //Total
   }
 
-  test("Case 2: Parallelize will produce a stream of information across 4 " +
-    "logical partitions")
+  test("""Case 2: Parallelize will produce a stream of information across 4 " +
+        |  logical partitions""".stripMargin)
   {
     val paralleled = sparkContext.parallelize(1 to 10, 4)
     val result = paralleled.map(x => x + 40).collect()
@@ -52,82 +52,91 @@ class SparkBasicRDDSpec extends FunSuite with Matchers with BeforeAndAfterAll {
 
   test("Case 3: Distinct will retrieve all the content and show distinct items") {
     getAllWordsFromReturnOfTheJedi.distinct(4).foreach(println)
-    pending
   }
 
   test("Case 4: Sort by will sort the information based on Ordering[T]") {
     getAllWordsFromReturnOfTheJedi.distinct(4)
-       //.sortBy(???) //Sort by words
-      .foreach(println)
-    pending
+      .sortBy(s => s, ascending = true)
+      .take(15).foreach(println)
   }
 
+
+
   test("""Case 5: Random RDD will split the RDDs by weight, see the results """ +
-    "from this test") {
+    "from this test, the weights must sum to 1") {
     val splitRDDs =  getAllWordsFromReturnOfTheJedi
       .randomSplit(Array.apply(.5, .5))
-
     splitRDDs.foreach(x => println(">>>" + x))
-    pending
+    splitRDDs.foreach(sm => sm.take(10).foreach(s => println(s"${sm.id}: $s")))
+  }
+
+  def timeIt[A](f: => A): (Long, A) = {
+    val startTime = System.currentTimeMillis()
+    val result = f
+    val endTime = System.currentTimeMillis()
+    (endTime - startTime, result)
   }
 
   test(
-    """Case 6: Persist with a storage level, there are multiple storage levels, memory, or disk,
-          and the replication factor of the storage. In this example the storage is both memory and disk
-          and on at least 2 nodes""") {
-    val words = getAllWordsFromReturnOfTheJedi
+    """Case 6: Persist with a storage level, there are multiple storage
+       |  levels, memory, or disk, and the replication factor of the storage.
+       |  In this example the storage is both memory and disk
+       |  and on at least 2 nodes""".stripMargin) {
 
+    val words = getAllWordsFromReturnOfTheJedi
     words.persist(StorageLevel.MEMORY_AND_DISK_SER_2)
     println("Running initially")
-    words.count()
+    println(s"Count 1: ${timeIt{words.count()}}")
     Thread.sleep(2000)
     println("Running again after 2 seconds")
-    words.count()
-    println("Going to remove all storage and block")
+    println(s"Count 2: ${timeIt(words.count())}")
+    println("Going to remove all storage and block until done")
     words.unpersist(true)
+    println(s"Count 3: ${timeIt(words.count())}")
     println("Running again after 2 seconds")
     Thread.sleep(2000)
-    words.count()
+    println(s"Count 4: ${timeIt(words.count())}")
     println("Done")
   }
 
-
   test(
     """Case 7: Caching will cache an RDD, Spark also supports pulling data sets
-       into a cluster-wide in-memory cache. This is particularly helpful for hot datasets that
-       are constantly queried that you can also query to the storage with getStorageLevel.
-       It will not expire until Spark is out of memory, at which point it will
-       remove RDDs from cache which are used least often. When you ask for something
-       that has been uncached it will recalculate the pipeline and put it in cache again.""")
-  {
+       |  into a cluster-wide in-memory cache. This is particularly
+       |  helpful for hot datasets that are constantly queried that you can
+       |  also query to the storage with getStorageLevel. It will not expire
+       |  until Spark is out of memory, at which point it will
+       |  remove RDDs from cache which are used least often. When you ask for
+       |  something that has been uncached it will recalculate the
+       |  pipeline and put it in cache again.""".stripMargin) {
 
     val words = getAllWordsFromReturnOfTheJedi
-    words.count()
-    words.getStorageLevel
+    println(s"Original count: ${timeIt(words.count())}")
+    println(s"Storage Level: ${words.getStorageLevel}")
     Thread.sleep(2000)
     println("Running again after 2 seconds")
-    words.count()
+    println(s"After 2 seconds: ${timeIt(words.count())}")
     //Mark the RDD as non-persistent, and remove all blocks for it from memory and disk
     words.unpersist(true)
     println("Running again after 2 seconds")
-    words.count()
+    println(s"After 4 seconds: ${timeIt(words.count())}")
   }
 
-  test("Case 10: Convert from DataFrames or DataSet to RDD") {
+  test("Case 8: Convert from DataFrames or DataSet to RDD") {
     val dataSetLong = sparkSession.range(1, 100).map(x => x + 1)
     val dataFrames: DataFrame = dataSetLong.toDF("numbers")
     val rdd: RDD[Row] = dataFrames.rdd
     rdd.map(row => row.getLong(0)).foreach(x => println(x))
   }
 
-  test("Case 11: To DataFrame can take an RDD and convert to a DataFrame") {
+  test("Case 9: To DataFrame can take an RDD and convert to a DataFrame") {
     val rdd = sparkContext.parallelize(1 to 100)
     val dataFrame = rdd.toDF("amounts")
     val dataSet = dataFrame.map(row => row.getInt(0))
   }
 
-  test("Case 12: Another example of converting to a DataFrame") {
-    val afcNorth = Seq(("Bengals", "Cincinnati", "Paul Brown Stadium"),
+  test("Case 10: Another example of converting to a DataFrame") {
+    val afcNorth =
+      Seq(("Bengals", "Cincinnati", "Paul Brown Stadium"),
       ("Steelers", "Pittsburgh", "Heinz Field"),
       ("Browns", "Cleveland", "FirstEnergy Field"),
       ("Ravens", "Baltimore", "M&T Bank Stadium"))

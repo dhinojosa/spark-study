@@ -9,7 +9,7 @@ import org.apache.spark.streaming.kafka010.ConsumerStrategies.Subscribe
 import org.apache.spark.streaming.kafka010.KafkaUtils
 import org.apache.spark.streaming.kafka010.LocationStrategies.PreferConsistent
 
-object KafkaStreaming extends App {
+object UnstructuredKafkaStreaming extends App {
   val kafkaParams: Map[String, AnyRef] = Map[String, Object](
     "bootstrap.servers" -> "kaf0:9092,kaf1:9092", //Use your own addresses
     "key.deserializer" -> classOf[StringDeserializer],
@@ -39,7 +39,7 @@ object KafkaStreaming extends App {
 
   stream.map(cr => "Received: " + cr.value())
     .foreachRDD(rdd => rdd.foreach(s => println))
-  
+
   streamingContext.start()
   streamingContext.awaitTermination()
 }
