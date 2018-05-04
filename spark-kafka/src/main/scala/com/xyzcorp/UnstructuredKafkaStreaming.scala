@@ -39,6 +39,7 @@ object KafkaStreaming extends App {
 
   stream.map(cr => "Received: " + cr.value())
     .foreachRDD(rdd => rdd.foreach(s => println))
+  
   streamingContext.start()
   streamingContext.awaitTermination()
 }

@@ -9,6 +9,9 @@ lazy val root = (project in file("."))
 lazy val commonSettings = Seq(
   version := "1.0-SNAPSHOT",
   scalaVersion := "2.11.11",
+  scalacOptions ++= Seq("-unchecked", "-feature",
+    "-target:jvm-1.8"),
+  javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
   fork in run := true,
   resolvers += "Conjars" at "http://conjars.org/repo",
   libraryDependencies ++= Seq(
