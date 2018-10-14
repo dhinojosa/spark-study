@@ -3,7 +3,7 @@ package com.xyzcorp
 import java.sql.Timestamp
 
 import org.apache.spark.SparkConf
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.streaming.OutputMode
 
@@ -32,14 +32,13 @@ object SparkStructuredStreamingWithWindows extends App {
 
   import sparkSession.implicits._
 
-
-  val words = stream.as[(String, Timestamp)].flatMap(tp =>
-    tp._1.split(" ").map(word => (word, tp._2))
+  val words: DataFrame = stream.as[(String, Timestamp)]
+    .flatMap(tp => tp._1.split(" ").map(word => (word, tp._2))
   ).toDF("word", "timestamp")
 
 
   val windowedCounts = words.groupBy(
-    window($"timestamp", "10 minutes", "5 minutes"), $"word"
+    window($"timestamp", "5 minutes", "1 minute"), $"word"
   ).count().orderBy("window")
 
   val query = windowedCounts.writeStream

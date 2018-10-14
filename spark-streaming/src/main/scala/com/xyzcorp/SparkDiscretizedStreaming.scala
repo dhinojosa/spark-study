@@ -38,11 +38,12 @@ object SparkDiscretizedStreaming extends App {
     Some(currentCount + previousCount)
   }
 
-   private val result: DStream[(String, Int)] =
+  private val result: DStream[(String, Int)] =
      wordCounts.updateStateByKey(updateFunc)
 
   //Should be result, not wordCounts
   result.print()
+
 
   streamingContext.start()
   streamingContext.awaitTermination()

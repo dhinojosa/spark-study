@@ -20,10 +20,12 @@ object SparkDiscretizedStreamingWithWindows extends App {
   val lines: ReceiverInputDStream[String] =
     streamingContext.socketTextStream("localhost", 10150)
 
-  //produce information over the last 30 seconds of data,
+  // produce information over the last 30
+  // seconds of data,
   // every 10 seconds
   val windowedStream: DStream[String] =
-    lines.window(Seconds(30), Seconds(10))
+    lines
+      .window(Seconds(30), Seconds(10))
 
   windowedStream.print()
 
