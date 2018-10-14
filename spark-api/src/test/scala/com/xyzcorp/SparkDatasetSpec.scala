@@ -11,11 +11,12 @@ import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
 
 import scala.io.StdIn
 
-//Case Class
-case class Trade(date: String, open: Double, high: Double,
-                            low: Double, close: Double, volume: Long) {
+case class Trade(date: String, open: Double,
+                 high: Double,
+                 low: Double,
+                 close: Double,
+                 volume: Long) {
   private val formatter = DateTimeFormatter.ofPattern("d-MMM-yy")
-
   def getLocalDate: LocalDate = LocalDate.parse(date, formatter)
 }
 
@@ -25,13 +26,15 @@ class SparkDatasetSpec extends FunSuite with Matchers with BeforeAndAfterAll {
   private lazy val sparkConf = new SparkConf()
     .setAppName("spark_basic_dataset")
     .setMaster("local[*]")
-  private lazy val sparkSession = SparkSession.builder().config(sparkConf).getOrCreate()
+  private lazy val sparkSession = SparkSession.builder().config(sparkConf)
+    .getOrCreate()
   private lazy val sparkContext = sparkSession.sparkContext
 
   sparkContext.setLogLevel("INFO")
   lazy val url: URL = getClass.getResource("/goog.csv")
 
-  test("Case 1: Show will show a minimal amount of data from the spark data set") {
+  test("""Case 1: Create a DataSet from an RDD that was created
+      |  using parallelize""".stripMargin) {
     import sparkSession.implicits._
     val frame: DataFrame = sparkSession.read.csv(url.getFile)
     val dataset: Dataset[Int] = sparkSession
@@ -39,15 +42,15 @@ class SparkDatasetSpec extends FunSuite with Matchers with BeforeAndAfterAll {
       .parallelize(1 to 1000).toDS()
   }
 
-  //2.0 - Read an ORC or Hive, the default is DataSet, reduceByKey
-
   test("Case 2: Datasets can be created from a Seq") {
     import sparkSession.implicits._
-    val dataset: Dataset[String] = sparkSession.createDataset(List("One", "Two", "Three"))
+    val dataset: Dataset[String] = sparkSession
+      .createDataset(List("One", "Two", "Three"))
     dataset.map(s => s.length).foreach(s => println(s))
   }
 
-  test("Case 3: Dataset can be explained before run") {
+  test("""Case 3: Dataset can be created using a range and also
+      |  explained before run""".stripMargin) {
     val value: Dataset[lang.Long] = sparkSession.range(1, 100)
     value.filter(x => x % 2 == 0).explain(true)
   }
@@ -56,13 +59,14 @@ class SparkDatasetSpec extends FunSuite with Matchers with BeforeAndAfterAll {
     sparkSession.read.option("header", "true").csv(url.getFile).show()
   }
 
-  test("Case 5: Dataset can also have a schema inferred") {
-    sparkSession
+  test("""Case 5: Dataset can also be read from a file and
+      |  have a schema inferred. Keep in mind that a DataFrame is
+      |  really just a Dataset[Row]""".stripMargin) {
+    val frame = sparkSession
       .read
       .option("header", "true")
       .option("inferSchema", "true")
       .csv(url.getFile)
-      .printSchema()
   }
 
   test("Case 6: Dataset can have a case class used in its place") {
@@ -115,11 +119,12 @@ class SparkDatasetSpec extends FunSuite with Matchers with BeforeAndAfterAll {
   test("Case 10: Converting a row to a case class") {
     val url = getClass.getResource("/goog.csv")
     import sparkSession.implicits._
-    val stockTransactions = sparkSession.read
+    val stockTransactions: Dataset[Trade] = sparkSession.read
       .option("header", "true")
       .option("inferSchema", "true")
       .csv(url.getFile)
       .as[Trade]
+
     stockTransactions.show()
   }
 
@@ -136,9 +141,10 @@ class SparkDatasetSpec extends FunSuite with Matchers with BeforeAndAfterAll {
       .foreach(st => println(st.volume))
   }
 
-
-  test("Case 12: groupByKey can group by a month, careful that we can only " +
-    "operate on values that are primitives or case classes") {
+  test(
+    """Case 12: groupByKey can group by a month, careful that we can only
+       |  operate on values that are primitives
+       |  or case classes""".stripMargin) {
 
     val url = getClass.getResource("/goog.csv")
 
@@ -150,10 +156,18 @@ class SparkDatasetSpec extends FunSuite with Matchers with BeforeAndAfterAll {
       .csv(url.getFile)
       .as[Trade]
 
-    val r: KeyValueGroupedDataset[Int, Trade] = stockTransactions
-      .groupByKey(_.getLocalDate.getMonth.getValue)
+    import java.time.Month
 
-    println(r.keys.collect())
+    import org.apache.spark.sql.functions._
+
+    val convertToMonthUDF = udf((x:Int) => Month.of(x).toString)
+
+    stockTransactions
+      .groupByKey(_.getLocalDate.getMonth.toString)
+      .count()
+      .withColumnRenamed("count(1)", "count")
+      .withColumnRenamed("value", "month")
+      .show(12)
   }
 
   override protected def beforeAll(): Unit = {

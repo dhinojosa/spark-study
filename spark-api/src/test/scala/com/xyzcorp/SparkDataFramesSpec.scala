@@ -27,8 +27,12 @@ class SparkDataFramesSpec
 
   import sparkSession.implicits._ //required for conversions
 
-  test("""Case 1: Show will show a minimal amount
-        of data from the spark data set""") {
+  test(
+    """Case 1: Show will show a minimal amount
+      |  of data from the spark data set""".stripMargin) {
+    //Reading a local file is not normal, unless
+    //you're doing a prezo, in actualiaty you will need
+    //HDFS, S3, Cassandra
     val url = this.getClass.getResource("/goog.csv")
     val frame: DataFrame = sparkSession
       .read
@@ -50,48 +54,40 @@ class SparkDataFramesSpec
       .option("header", "true")
       .option("inferSchema", "true")
       .csv(url.getFile)
-
-    val schema = dataFrame.schema
-
-    println(schema) //Show the schema
-
     dataFrame.show() //Show the data
   }
 
-
   test(
     """Case 4: Reading the Schema from JSON, something to be aware of,
-          is that json will need to be a line by line JSON. You also can
-          read other 'big data' formats like ORC, Parquet, etc. """) {
+       |  is that json will need to be a line by line JSON. You also can
+       |  read other 'big data' formats like ORC,
+       |  Parquet, etc.""".stripMargin) {
     val url = getClass.getResource("/goog.json")
-    val schema = sparkSession.read
+    val frame = sparkSession.read
       .option("header", "true")
       .option("inferSchema", "true")
       .json(url.getFile)
-      .schema
-    println(schema)
+    frame.show()
   }
 
   test(
     """Case 5: Using your intuition, what do you think the method will
-       be to sort by the high price of the trade? Use that method, don't know
-       the name of the column? Run the previous test and show
-       the results using show()""".stripMargin) {
-
+       |  be to sort by the high price of the trade? Use that method, don't know
+       |  the name of the column? Run the previous test and show
+       |  the results using show()""".stripMargin) {
     val url = this.getClass.getResource("/goog.csv")
     val frame: DataFrame = sparkSession
       .read
       .option("header", "true")
       .option("inferSchema", "true")
       .csv(url.getFile)
-
-    frame.sort("high").show()
+    frame.sort("High").show()
   }
 
   test(
     """Case 6: Provide the solution to sort by the high column again, but
-      |this time add the method explain(true) at the end of the chain, true
-      |shows the full mapping of how the data will be analyzed""".stripMargin) {
+      |  this time add the method explain(true) at the end of the chain, true
+      |  shows the full mapping of how the data will be analyzed""".stripMargin) {
 
     val url = this.getClass.getResource("/goog.csv")
     val frame: DataFrame = sparkSession
@@ -99,7 +95,6 @@ class SparkDataFramesSpec
       .option("header", "true")
       .option("inferSchema", "true")
       .csv(url.getFile)
-
     println(frame.sort("High").show())
   }
 
@@ -129,7 +124,7 @@ class SparkDataFramesSpec
       StructField("Closing",
         DoubleType,
         nullable = false,
-        Metadata.fromJson("{closing time: 3:00 Eastern}")),
+        Metadata.fromJson("{\"closing time\": \"3:00 Eastern\"}")),
       StructField("Trade Date", StringType, nullable = false),
       StructField("High", DoubleType, nullable = false),
       StructField("Low", DoubleType, nullable = false),
@@ -145,10 +140,9 @@ class SparkDataFramesSpec
     frame.show()
   }
 
-  test(
-    """Case 9: Columns represent columns and can be used for querying
-       There are four different formats in Scala to represent a column.
-       These come from the org.apache.spark.sql package""") {
+  test("""Case 9: Columns represent columns and can be used for querying
+       |  There are four different formats in Scala to represent a column.
+       |  These come from the org.apache.spark.sql package""".stripMargin) {
     import org.apache.spark.sql.functions._
     col("someColumnName")
     column("someColumnName")
@@ -174,9 +168,9 @@ class SparkDataFramesSpec
     println(dataFrame.columns.toList)
   }
 
-  test(
-    """Case 12: Expressions can be used to query a DataFrame and has a very
-      | similar flavor to SQL, in fact it is the driving engine to it.""") {
+  test("""Case 12: Expressions can be used to query a DataFrame and has a very
+      |  similar flavor to SQL, in fact it is the
+      |  driving engine to it.""".stripMargin) {
     val url = this.getClass.getResource("/goog.json")
     val dataFrame = sparkSession.read
       .option("header", "true")
@@ -191,8 +185,8 @@ class SparkDataFramesSpec
 
   test(
     """Case 13: Create a query that will show days where the closing price of
-      | Google's stock is less than the opening price that trading day using
-      | an expression. Remove pending when ready""") {
+      |  Google's stock is less than the opening price that trading day using
+      |  an expression. Remove pending when ready""".stripMargin) {
     import org.apache.spark.sql.functions._
 
     val url = this.getClass.getResource("/goog.json")
@@ -203,15 +197,16 @@ class SparkDataFramesSpec
       .json(url.getFile)
     val column: Column = expr("Close > Open")
 
-    println(dataFrame.where(column).show())
-
-    pending
+    dataFrame.where(column).show()
   }
 
   test(
     """Case 14: Create a query that will show days where the closing price of
-      | Google's stock is less than the opening price that trading day using
-      | an expression. Remove pending when ready""") {
+      |  Google's stock is less than the opening price that trading day using
+      |  an expression. Remove pending when ready""".stripMargin) {
+
+    pending
+
     val url = this.getClass.getResource("/goog.json")
     val dataFrame = sparkSession.read
       .option("header", "true")
@@ -220,21 +215,44 @@ class SparkDataFramesSpec
     val column: Column = ???
 
     println(dataFrame.where(column).show())
-
-    pending
   }
 
-  test(
-    """Case 15: Creating a manual row so as it convert it into dataframe
-      |or add it to an existing one""") {
+  test("""Case 15: Creating a manual row""") {
     val newRow = Row("24-Jul-17", 967.84, 967.84, 960.33, 961.08, 1493955)
     println(newRow)
   }
 
   test(
     """Case 16: Make your own DataFrame using custom Rows.
-      | We will also use
-      | parallelize which will create a construct called RDD""") {
+      |  We will also use parallelize which will create a
+      |  construct called RDD""".stripMargin) {
+
+    val employeeSchema = new StructType(Array(
+      StructField("firstName", StringType, nullable = false),
+      StructField("middleName", StringType, nullable = true),
+      StructField("lastName", StringType, nullable = false),
+      StructField("salaryPerYear", IntegerType, nullable = false)
+    ))
+
+    val employees =
+      List(Row("Abe", null, "Lincoln", 40000),
+           Row("Martin", "Luther", "King", 80000),
+           Row("Ben", null, "Franklin", 82000),
+           Row("Toni", null, "Morrisson", 82000))
+
+    val rdd: RDD[Row] = sparkContext
+      .parallelize(employees) //uses an rdd more on that
+    val dataFrame = sparkSession.createDataFrame(rdd, employeeSchema)
+
+    val value = dataFrame.where("length (firstName) == 3")
+
+    println(value.show())
+  }
+
+  test(
+    """Case 17: Make your own DataFrame using custom Rows.
+      |  We will also just create a dataframe using
+      |  the a List of Rows""".stripMargin) {
 
     val employeeSchema = new StructType(Array(
       StructField("firstName", StringType, nullable = false),
@@ -249,17 +267,16 @@ class SparkDataFramesSpec
         Row("Ben", null, "Franklin", 82000),
         Row("Toni", null, "Morrisson", 82000))
 
-    val rdd: RDD[Row] = sparkContext.parallelize(employees) //uses an rdd more on that
-    val dataFrame = sparkSession.createDataFrame(rdd, employeeSchema)
-
+    import scala.collection.JavaConverters._
+    val dataFrame = sparkSession
+      .createDataFrame(employees.asJava, employeeSchema)
     val value = dataFrame.where("length (firstName) == 3")
-
     println(value.show())
   }
 
   test(
-    """Case 17: Select will select columns from the dataFrame, in this
-      |example we will use it in conjunction with where""".stripMargin) {
+    """Case 18: Select will select columns from the dataFrame, in this
+      |  example we will use it in conjunction with where""".stripMargin) {
     import org.apache.spark.sql.functions._
     val url = this.getClass.getResource("/goog.json")
     val dataFrame = sparkSession.read
@@ -269,10 +286,12 @@ class SparkDataFramesSpec
     val result = dataFrame
       .select(col("Date"), $"Open", column("Close"))
       .where("Volume > 2000000")
+
+    result.explain(true)
     result.show()
   }
 
-  test("""Case 18: Select can use any manifestation of columns""") {
+  test("""Case 19: Select can use any manifestation of columns""") {
     import org.apache.spark.sql.functions._
     val url = this.getClass.getResource("/goog.json")
     val dataFrame = sparkSession.read
@@ -285,8 +304,7 @@ class SparkDataFramesSpec
     result.show()
   }
 
-  test("""Case 19: Select and expr is so common there is selectExpr""") {
-    import org.apache.spark.sql.functions._
+  test("""Case 20: Select and expr is so common there is selectExpr""") {
     val url = this.getClass.getResource("/goog.json")
     val dataFrame = sparkSession.read
       .option("header", "true")
@@ -296,8 +314,7 @@ class SparkDataFramesSpec
     result.show()
   }
 
-  test("""Case 20: Showing all columns while offering an extra.""") {
-    import org.apache.spark.sql.functions._
+  test("""Case 21: Showing all columns while offering an extra.""") {
     val url = this.getClass.getResource("/goog.json")
     val dataFrame = sparkSession.read
       .option("header", "true")
@@ -308,8 +325,8 @@ class SparkDataFramesSpec
   }
 
   test(
-    """Case 21: You can also include a constant within a dataFrame
-      |using CONSTANT""") {
+    """Case 22: You can also include a constant within a dataFrame
+      |  using CONSTANT""".stripMargin) {
     import org.apache.spark.sql.functions._
     val url = this.getClass.getResource("/goog.json")
     val dataFrame = sparkSession.read
@@ -321,8 +338,8 @@ class SparkDataFramesSpec
   }
 
   test(
-    """Case 22: Joining two sets of data. In this case let's say we
-      |only need Spain""".stripMargin) {
+    """Case 23: Joining two sets of data. In this case let's say we
+      |  only need Spain""".stripMargin) {
 
     val countriesMedalCountDF =
       Seq(("United States", "100m Freestyle", 1, 0, 3),
@@ -349,26 +366,26 @@ class SparkDataFramesSpec
   }
 
   test(
-    """Case 23: Repartitioning from a DataFrame. This will attempt to
-      |distribute your data across multiple partitions across multiple
-      |machines.  This can be called with a number or by column""") {
+    """Case 24: Repartitioning from a DataFrame. This will attempt to
+      |  distribute your data across multiple partitions across multiple
+      |  machines.  This can be called with a number
+      |  or by column""".stripMargin) {
 
     val largeRange = sparkSession.range(1, 1000000).toDF
     println(largeRange.rdd.getNumPartitions)
 
     Thread.sleep(1000)
 
-    val largeRangeDistributed = largeRange.repartition(10) //Force it to 10, or
-    // at least
-    // attempt it
+    //Force it to 10, or at least attempt it
+    val largeRangeDistributed = largeRange.repartition(10)
 
     println(largeRangeDistributed.rdd.getNumPartitions)
   }
 
   test(
-    """Case 24: Coalesce is the opposite of repartition and will attempt
-      |to bring it down to a certain of partitions but may often times be
-      |overriden""".stripMargin) {
+    """Case 25: Coalesce is the opposite of repartition and will attempt
+      |  to bring it down to a certain of partitions but may often times be
+      |  overriden""".stripMargin) {
 
     val range: Dataset[lang.Long] = sparkSession.range(1, 1000000)
     val largeRange = range.toDF
@@ -376,11 +393,8 @@ class SparkDataFramesSpec
 
     Thread.sleep(1000)
 
+    //Force it to 10, or at least attempt it
     val largeRangeDistributed = largeRange.repartition(10)
-
-    //Force it to 10, or
-    // at least
-    // attempt it
 
     Thread.sleep(1000)
 
@@ -390,14 +404,12 @@ class SparkDataFramesSpec
   }
 
   test(
-    """Case 25: DataFrames API are powerful enough to create UDF, user
-      |defined functions""".stripMargin) {
+    """Case 26: DataFrames API are powerful enough to create UDF, user
+      |  defined functions""".stripMargin) {
 
     import org.apache.spark.sql.functions._
 
-    def is_odd(x: Int): Boolean = x % 2 != 0
-
-    val is_odd_udf = udf(is_odd(_: Int): Boolean)
+    val is_odd_udf = udf((x:Int) => x % 2 == 0)
 
     val url = this.getClass.getResource("/goog.json")
 
@@ -430,19 +442,18 @@ class SparkDataFramesSpec
     (8, 3, "Steelers", "Football")).toDF("id", "city_id", "team", "sport_type")
 
 
-  test("Case 26: Inner joins in using Spark Dataframes") {
-    val innerjoin = cities
-      .join(teams, cities.col("id") === teams.col("city_id"))
+  test("Case 27: Inner joins in using Spark Dataframes") {
+    val innerjoin = cities.join(teams, cities.col("id") === teams.col("city_id"))
     innerjoin.show()
   }
 
-  test("Case 27: Outer joins in using Spark Dataframes") {
+  test("Case 28: Outer joins in using Spark Dataframes") {
     val outerjoin = cities.join(teams, cities.col("id") === teams.col
     ("city_id"), "outer")
     outerjoin.show()
   }
 
-  test("Case 28: Joining while getting rid of duplicate keys") {
+  test("Case 29: Joining while getting rid of duplicate keys") {
     val outerjoin = cities.join(
       teams.withColumnRenamed("id", "team_id"),
       cities.col("id") === teams.col("city_id"), "outer")

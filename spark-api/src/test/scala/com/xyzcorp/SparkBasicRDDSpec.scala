@@ -1,7 +1,7 @@
 package com.xyzcorp
 
 import org.apache.log4j.Logger
-import org.apache.spark.SparkConf
+import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.apache.spark.storage.StorageLevel
@@ -15,7 +15,7 @@ class SparkBasicRDDSpec extends FunSuite with Matchers with BeforeAndAfterAll {
     .setAppName("spark_basic_rdd").setMaster("local[*]")
   private lazy val sparkSession = SparkSession.builder()
     .config(sparkConf).getOrCreate()
-  private lazy val sparkContext = sparkSession.sparkContext
+  private lazy val sparkContext: SparkContext = sparkSession.sparkContext
 
   sparkContext.setLogLevel("INFO")
 
@@ -60,10 +60,10 @@ class SparkBasicRDDSpec extends FunSuite with Matchers with BeforeAndAfterAll {
       .take(15).foreach(println)
   }
 
+  test("""Case 5: Random RDD will split the RDDs by weight, see the results
+      |  from this test, the weights must sum to 1, this can be used for
+      |  machine learning""".stripMargin) {
 
-
-  test("""Case 5: Random RDD will split the RDDs by weight, see the results """ +
-    "from this test, the weights must sum to 1") {
     val splitRDDs =  getAllWordsFromReturnOfTheJedi
       .randomSplit(Array.apply(.5, .5))
     splitRDDs.foreach(x => println(">>>" + x))
