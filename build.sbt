@@ -51,10 +51,10 @@ lazy val app = (project in file("spark-app"))
 lazy val streaming = (project in file("spark-streaming"))
   .settings(commonSettings)
   .settings(unprovidedSettings)
-  .settings(
+  .settings(Seq(
     libraryDependencies +=
       "org.apache.spark" %% "spark-streaming" % sparkVersion
-  )
+  ))
 
 lazy val graphx = (project in file("spark-graphx"))
   .settings(commonSettings)
