@@ -10,6 +10,7 @@ import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
 import scala.io.StdIn
 
 class SparkCassandraSpec extends FunSuite with Matchers with BeforeAndAfterAll {
+
   private lazy val sparkConf = new SparkConf().setAppName("spark_cassandra_rdd")
     .set("spark.cassandra.connection.host", "cas0")
     .set("spark.cassandra.auth.username", "cassandra")

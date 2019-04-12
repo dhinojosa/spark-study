@@ -1,21 +1,23 @@
 package com.xyzcorp
 
 import org.apache.spark.SparkConf
+
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
 
-class RandomForrestSpec extends FunSuite with Matchers with BeforeAndAfterAll {
+class NaiveBayesSpec extends FunSuite with Matchers with BeforeAndAfterAll {
 
   private lazy val sparkConf = new SparkConf()
-    .setAppName("spark_decision_tree")
+    .setAppName("spark_prepping_data")
     .setMaster("local[*]")
   private lazy val sparkSession = SparkSession
     .builder()
     .config(sparkConf)
     .config("spark.driver.bindAddress", "127.0.0.1")
     .getOrCreate()
-  private lazy val sparkContext = sparkSession
-    .sparkContext //required for conversions
+  private lazy val sparkContext = sparkSession.sparkContext
+
+  import sparkSession.implicits._ //required for conversions
 
   sparkContext.setLogLevel("INFO") //required for conversions
 
@@ -61,8 +63,7 @@ class RandomForrestSpec extends FunSuite with Matchers with BeforeAndAfterAll {
 
     newFrame.show()
 
-    val splitData: Array[Dataset[Row]] = newFrame
-      .randomSplit(Array(0.7, 0.3), seed = 1234L)
+    val splitData: Array[Dataset[Row]] = newFrame.randomSplit(Array(0.7, 0.3), seed = 1234L)
 
     val trainingData = splitData(0)
     val testingData = splitData(1)
@@ -72,14 +73,13 @@ class RandomForrestSpec extends FunSuite with Matchers with BeforeAndAfterAll {
 
     trainingData.show()
 
-    import org.apache.spark.ml.classification.RandomForestClassifier
+    import org.apache.spark.ml.classification.NaiveBayes
 
-    val randomForestClassifier = new RandomForestClassifier()
+    val naiveBayes = new NaiveBayes()
       .setFeaturesCol("features")
       .setLabelCol("target")
-      .setNumTrees(50)
 
-    val model = randomForestClassifier.fit(trainingData)
+    val model = naiveBayes.fit(trainingData)
     val result = model.transform(testingData)
 
     result.show()
@@ -90,7 +90,6 @@ class RandomForrestSpec extends FunSuite with Matchers with BeforeAndAfterAll {
     val evaluator = new MulticlassClassificationEvaluator()
       .setLabelCol("target")
       .setPredictionCol("prediction")
-
     val accuracyMetric = evaluator.setMetricName("accuracy")
     val f1Metric = evaluator.setMetricName("f1")
     val accuracy = accuracyMetric.evaluate(result)

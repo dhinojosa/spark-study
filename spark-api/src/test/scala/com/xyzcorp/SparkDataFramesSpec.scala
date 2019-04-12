@@ -55,6 +55,7 @@ class SparkDataFramesSpec
       .option("inferSchema", "true")
       .csv(url.getFile)
     dataFrame.show() //Show the data
+    dataFrame.printSchema()
   }
 
   test(

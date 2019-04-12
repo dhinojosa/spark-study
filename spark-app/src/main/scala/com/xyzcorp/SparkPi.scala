@@ -6,7 +6,7 @@ import org.apache.spark.sql.SparkSession
 import scala.math.random
 
 object SparkPi {
-  def main(args: Array[String]) {
+  def main(args: Array[String]):Unit = {
     val sparkSession = SparkSession
       .builder
       .appName("Spark Pi")

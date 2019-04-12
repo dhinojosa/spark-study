@@ -35,6 +35,7 @@ object SparkStructuredStreaming extends App {
 
   val wordCounts = words.groupBy("value").count()
 
+  wordCounts.explain(true)
   //Structured
   val query = wordCounts
     .writeStream

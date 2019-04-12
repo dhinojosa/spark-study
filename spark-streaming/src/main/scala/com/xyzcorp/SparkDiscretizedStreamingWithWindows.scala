@@ -22,7 +22,7 @@ object SparkDiscretizedStreamingWithWindows extends App {
 
   // produce information over the last 30
   // seconds of data,
-  // every 10 seconds
+  // every 10 seconds Hop
   val windowedStream: DStream[String] =
     lines
       .window(Seconds(30), Seconds(10))

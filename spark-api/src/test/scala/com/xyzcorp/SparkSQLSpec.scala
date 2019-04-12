@@ -34,7 +34,6 @@ class SparkSQLSpec extends FunSuite with Matchers with BeforeAndAfterAll {
       .option("inferSchema", "true")
       .csv(url.getFile)
 
-    println(frame.columns.toList.mkString(">>>", ",", "<<<<"))
     frame.createOrReplaceTempView("google_data")
 
     val frame1 = sparkSession.sql("SELECT Date, Open, " +

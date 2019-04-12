@@ -71,11 +71,12 @@ class SparkDatasetSpec extends FunSuite with Matchers with BeforeAndAfterAll {
 
   test("Case 6: Dataset can have a case class used in its place") {
     import sparkSession.implicits._
-    val items: Dataset[Trade] = sparkSession
+    val dataFrame: DataFrame = sparkSession
       .read
       .option("header", "true")
       .option("inferSchema", "true")
       .csv(url.getFile)
+    val items: Dataset[Trade] = dataFrame
       .as[Trade]
     items
       .filter(t => t.close > t.open)
