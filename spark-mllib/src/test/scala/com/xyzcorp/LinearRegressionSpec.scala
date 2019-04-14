@@ -1,7 +1,7 @@
 package com.xyzcorp
 
 import org.apache.spark.SparkConf
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{DataFrame, Dataset, SparkSession}
 import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
 
 class LinearRegressionSpec extends FunSuite with Matchers with BeforeAndAfterAll {
@@ -21,25 +21,56 @@ class LinearRegressionSpec extends FunSuite with Matchers with BeforeAndAfterAll
   import sparkSession.implicits._ //required for conversions
 
   test("Case 1: Determining the covariance between features") {
-    import org.apache.spark.ml.linalg.{Matrix, Vectors}
-    import org.apache.spark.ml.stat.Correlation
     import org.apache.spark.sql.Row
+    val url = this.getClass.getResource("/heart.csv")
 
-    val data = Seq(
-      Vectors.sparse(4, Seq((0, 1.0), (3, -2.0))),
-      Vectors.dense(4.0, 5.0, 0.0, 3.0),
-      Vectors.dense(6.0, 7.0, 0.0, 8.0),
-      Vectors.sparse(4, Seq((0, 9.0), (3, 1.0)))
-    )
+    val frame: DataFrame = sparkSession
+      .read
+      .option("header", "true")
+      .option("inferSchema", "true")
+      .csv(url.getFile)
 
-    val df = data.map(Tuple1.apply).toDF("features")
+    frame.show()
 
-    df.show()
+    println("Show schema")
+    frame.printSchema()
 
-    val Row(coeff1: Matrix) = Correlation.corr(df, "features").head
-    println("Pearson correlation matrix:\n" + coeff1.toString)
+    import org.apache.spark.ml.feature.VectorAssembler
+    val assembler = new VectorAssembler()
+      .setInputCols(Array("age"))
+      .setOutputCol("features")
 
-    val Row(coeff2: Matrix) = Correlation.corr(df, "features", "spearman").head
-    println("Spearman correlation matrix:\n" + coeff2.toString)
+    val newFrame = assembler.transform(frame)
+
+    newFrame.show()
+
+    val splitData: Array[Dataset[Row]] = newFrame.randomSplit(Array(0.7, 0.3), seed = 1234L)
+
+    val trainingData = splitData(0)
+    val testingData = splitData(1)
+
+    println("trainingData")
+    println("-------------")
+
+    trainingData.show()
+
+    import org.apache.spark.ml.regression.LinearRegression
+    val lr = new LinearRegression()
+      .setMaxIter(10)
+      .setRegParam(0.3)
+      .setElasticNetParam(0.8)
+
+    val lrModel = lr.fit(trainingData)
+
+    // Print the coefficients and intercept for linear regression
+    println(s"Coefficients: ${lrModel.coefficients} Intercept: ${lrModel.intercept}")
+
+    // Summarize the model over the training set and print out some metrics
+    val trainingSummary = lrModel.summary
+    println(s"numIterations: ${trainingSummary.totalIterations}")
+    println(s"objectiveHistory: [${trainingSummary.objectiveHistory.mkString(",")}]")
+    trainingSummary.residuals.show()
+    println(s"RMSE: ${trainingSummary.rootMeanSquaredError}")
+    println(s"r2: ${trainingSummary.r2}")
   }
 }
